@@ -1,0 +1,4 @@
+from sqlalchemy.orm import relationship
+
+# Append this to the end of user.py
+# (Wait, I should properly edit it).

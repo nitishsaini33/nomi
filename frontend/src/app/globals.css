@@ -1,0 +1,90 @@
+@import "tailwindcss";
+
+@theme {
+  --color-background: #f4f4f0;
+  --color-surface: #ffffff;
+  --color-primary: #ff5900;
+  --color-text: #111111;
+
+  --shadow-brutal: 4px 4px 0px 0px #111111;
+  --shadow-brutal-hover: 2px 2px 0px 0px #111111;
+
+  --font-sans: var(--font-inter), system-ui, -apple-system, sans-serif;
+}
+
+@layer base {
+  *,
+  *::before,
+  *::after {
+    box-sizing: border-box;
+  }
+
+  html {
+    height: 100%;
+    scroll-behavior: smooth;
+  }
+
+  body {
+    background-color: var(--color-background);
+    color: var(--color-text);
+    font-family: var(--font-sans);
+    min-height: 100%;
+  }
+}
+
+@layer utilities {
+  .brutal-box {
+    background-color: var(--color-surface);
+    border: 2px solid var(--color-text);
+    box-shadow: var(--shadow-brutal);
+    transition: box-shadow 0.15s ease, transform 0.15s ease;
+  }
+
+  .brutal-btn {
+    background-color: var(--color-primary);
+    color: var(--color-text);
+    font-weight: 800;
+    padding: 0.5rem 1rem;
+    border: 2px solid var(--color-text);
+    box-shadow: var(--shadow-brutal);
+    transition: all 0.15s ease;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    user-select: none;
+    text-decoration: none;
+  }
+
+  .brutal-btn:hover {
+    box-shadow: 6px 6px 0px 0px #111111;
+    transform: translate(-1px, -1px);
+  }
+
+  .brutal-btn:active {
+    transform: translate(2px, 2px);
+    box-shadow: var(--shadow-brutal-hover);
+  }
+
+  .brutal-input {
+    background-color: var(--color-surface);
+    color: var(--color-text);
+    padding: 0.625rem 0.875rem;
+    border: 2px solid var(--color-text);
+    outline: none;
+    box-shadow: var(--shadow-brutal);
+    transition: all 0.15s ease;
+    font-weight: 600;
+    width: 100%;
+  }
+
+  .brutal-input:focus {
+    transform: translate(2px, 2px);
+    box-shadow: var(--shadow-brutal-hover);
+  }
+
+  .brutal-input::placeholder {
+    color: #999;
+    font-weight: 500;
+  }
+}
