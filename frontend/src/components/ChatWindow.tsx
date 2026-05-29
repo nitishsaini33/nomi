@@ -277,6 +277,8 @@ export default function ChatWindow({
         
         {chatMessages.map((msg: any, i: number) => {
           const isMe = msg.sender_id === currentUser.id;
+          const msgAgeMs = Date.now() - new Date(msg.timestamp).getTime();
+          const canDelete = isMe && !msg.is_deleted && msg.id && msgAgeMs < 5 * 60 * 1000; // 5 min window
           return (
             <div
               key={msg.id || i}
@@ -316,12 +318,12 @@ export default function ChatWindow({
                     </div>
                   )}
                   
-                  {/* Delete button (only for my msgs) */}
-                  {isMe && !msg.is_deleted && msg.id && (
+                  {/* Delete button (only for my msgs within 5 minutes) */}
+                  {canDelete && (
                     <button
                       onClick={() => deleteMessage(msg.id)}
                       className="bg-red-500 text-white w-6 h-6 border-2 border-text font-black text-xs flex items-center justify-center hover:scale-110 transition-transform shadow-sm"
-                      title="Delete Message"
+                      title="Delete Message (5 min window)"
                     >
                       X
                     </button>

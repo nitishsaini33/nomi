@@ -112,6 +112,12 @@ async def delete_message(
         raise HTTPException(status_code=404, detail="Message not found")
     if msg.sender_id != current_user.id:
         raise HTTPException(status_code=403, detail="Not authorized")
+    
+    # Enforce 5-minute deletion window
+    from datetime import datetime, timezone, timedelta
+    msg_age = datetime.now(timezone.utc) - msg.timestamp.replace(tzinfo=timezone.utc)
+    if msg_age > timedelta(minutes=5):
+        raise HTTPException(status_code=403, detail="Messages can only be deleted within 5 minutes of sending")
         
     msg.is_deleted = True
     msg.content = "This message was deleted"
