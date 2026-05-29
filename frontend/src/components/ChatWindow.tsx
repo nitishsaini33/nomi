@@ -28,9 +28,11 @@ export default function ChatWindow({
   const [input, setInput] = useState('');
   const [isLoadingMore, setIsLoadingMore] = useState(false);
   const [hasMore, setHasMore] = useState(true);
+  const [openReactionMsgId, setOpenReactionMsgId] = useState<string | null>(null);
   const scrollRef = useRef<HTMLDivElement>(null);
   const typingTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const lastScrollHeightRef = useRef<number>(0);
+  const initialScrollDoneRef = useRef<string | null>(null); // tracks which chat we've scrolled for
   const router = useRouter();
 
   const chatMessages = messages[otherUserId] || [];
@@ -57,9 +59,17 @@ export default function ChatWindow({
         // We just loaded older messages, restore scroll position
         scrollRef.current.scrollTop = scrollRef.current.scrollHeight - lastScrollHeightRef.current;
         setIsLoadingMore(false); // Reset
-      } else {
-        // Auto-scroll to bottom for new incoming messages
+      } else if (initialScrollDoneRef.current !== otherUserId) {
+        // First open of this chat: always jump to the very bottom
         scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
+        initialScrollDoneRef.current = otherUserId;
+      } else {
+        // Already scrolled for this chat — only auto-scroll if user is near bottom
+        const { scrollTop, scrollHeight, clientHeight } = scrollRef.current;
+        const isNearBottom = scrollHeight - scrollTop - clientHeight < 120;
+        if (isNearBottom) {
+          scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
+        }
       }
     }
     
@@ -183,6 +193,7 @@ export default function ChatWindow({
   };
 
   const reactToMessage = async (msgId: string, emoji: string) => {
+    setOpenReactionMsgId(null); // close picker immediately
     try {
       // Optimistic update locally
       addReaction(otherUserId, msgId, {
@@ -285,17 +296,23 @@ export default function ChatWindow({
                 <div className="absolute -top-3 -right-3 flex gap-1 hidden group-hover:flex z-10">
                   {/* Reaction Button (for all msgs) */}
                   {!msg.is_deleted && msg.id && (
-                    <div className="relative group/react">
-                      <button className="bg-yellow-300 text-text w-6 h-6 border-2 border-text font-black text-xs flex items-center justify-center hover:scale-110 transition-transform shadow-sm" title="React">
+                    <div className="relative">
+                      <button 
+                        className="bg-yellow-300 text-text w-6 h-6 border-2 border-text font-black text-xs flex items-center justify-center hover:scale-110 transition-transform shadow-sm" 
+                        title="React"
+                        onClick={() => setOpenReactionMsgId(openReactionMsgId === msg.id ? null : msg.id)}
+                      >
                         +
                       </button>
-                      <div className="absolute top-full right-0 mt-1 hidden group-hover/react:flex bg-white border-2 border-text shadow-brutal p-1 gap-1 flex-row">
-                        {['👍', '❤️', '😂', '😮', '😢'].map(emoji => (
-                          <button key={emoji} onClick={() => reactToMessage(msg.id, emoji)} className="hover:scale-125 transition-transform">
-                            {emoji}
-                          </button>
-                        ))}
-                      </div>
+                      {openReactionMsgId === msg.id && (
+                        <div className="absolute top-full right-0 mt-1 flex bg-white border-2 border-text shadow-brutal p-1 gap-1 flex-row z-20">
+                          {['👍', '❤️', '😂', '😮', '😢'].map(emoji => (
+                            <button key={emoji} onClick={() => reactToMessage(msg.id, emoji)} className="hover:scale-125 transition-transform">
+                              {emoji}
+                            </button>
+                          ))}
+                        </div>
+                      )}
                     </div>
                   )}
                   
