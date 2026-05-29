@@ -37,7 +37,8 @@ async def websocket_endpoint(websocket: WebSocket, token: str):
         
         # Broadcast online status if this is their first connection
         if is_new_connection:
-            await manager.broadcast({"type": "user_status", "payload": {"user_id": user.id, "status": "online"}})
+            # Tell everyone (including self) this user is now online
+            await manager.broadcast_status(user.id, "online")
             
             # Tell this new user about everyone else who is already online
             online_users = await manager.get_online_users()
@@ -129,4 +130,5 @@ async def websocket_endpoint(websocket: WebSocket, token: str):
         except WebSocketDisconnect:
             manager.disconnect(websocket, user.id)
             if user.id not in manager.active_connections:
-                await manager.broadcast({"type": "user_status", "payload": {"user_id": user.id, "status": "offline"}})
+                # Broadcast offline status directly — no Redis needed for reliability
+                await manager.broadcast_status(user.id, "offline")

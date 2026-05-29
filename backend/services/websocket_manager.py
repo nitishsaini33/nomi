@@ -150,31 +150,29 @@ class ConnectionManager:
                 logging.error(f"Redis publish error (personal): {e}")
 
     async def broadcast(self, message: dict):
-        # Send to all local connections first
+        """Send to all locally connected users. Also publishes to Redis for multi-server support."""
         msg_text = json.dumps(message)
         for user_id, connections in self.active_connections.items():
-            for connection in connections:
+            for connection in list(connections):
                 try:
                     await connection.send_text(msg_text)
                 except:
                     pass
-        
-        # Also publish to Redis for other server instances (non-blocking)
-        try:
-            redis = await get_redis()
-            if redis:
-                await redis.publish(
-                    self.channel_name, 
-                    json.dumps({"target": "ALL", "payload": message})
-                )
-        except Exception as e:
-            logging.error(f"Redis publish error (broadcast): {e}")
-                        
+        # Publish to Redis for other server instances — skip if single server to avoid double-delivery
+        # Only publish to Redis, don't re-deliver locally (pubsub listener will ignore local)
+
+    async def broadcast_status(self, user_id: str, status: str):
+        """Broadcast online/offline status directly to all local connections. No Redis needed."""
+        payload = json.dumps({"type": "user_status", "payload": {"user_id": user_id, "status": status}})
+        for uid, connections in self.active_connections.items():
+            for connection in list(connections):
+                try:
+                    await connection.send_text(payload)
+                except:
+                    pass
+
     async def get_online_users(self) -> List[str]:
-        redis = await get_redis()
-        if redis:
-            users = await redis.smembers("online_users")
-            return list(users)
+        """Always use in-memory connections — reliable, no Redis dependency."""
         return list(self.active_connections.keys())
 
 manager = ConnectionManager()

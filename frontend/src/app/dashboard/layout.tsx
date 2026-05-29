@@ -32,81 +32,89 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
     const token = localStorage.getItem('token');
     if (!token) return;
 
-    const wsBaseUrl = process.env.NEXT_PUBLIC_WS_URL || 'ws://localhost:8000';
-    const socket = new WebSocket(`${wsBaseUrl}/ws?token=${token}`);
-    wsClient.socket = socket;
+    let reconnectTimer: NodeJS.Timeout | null = null;
+    let socket: WebSocket;
+    let destroyed = false;
 
-    socket.onmessage = (event) => {
-      const data = JSON.parse(event.data);
-      
-      // Support old raw messages and new event-based messages
-      const eventType = data.type || 'chat_message';
-      const msg = data.payload || data;
+    const connect = () => {
+      if (destroyed) return;
+      const wsBaseUrl = process.env.NEXT_PUBLIC_WS_URL || 'ws://localhost:8000';
+      socket = new WebSocket(`${wsBaseUrl}/ws?token=${token}`);
+      wsClient.socket = socket;
 
-      // Read latest store state inside handler to avoid stale closure
-      const { 
-        currentUser, 
-        activeChatUserId, 
-        addMessage, 
-        incrementUnread,
-        setOnlineUser,
-        setTypingUser,
-        updateMessage,
-        addReaction,
-        removeFriendData,
-        triggerSidebarRefresh
-      } = useChatStore.getState();
+      // On connect: clear all online dots — backend will re-send fresh status immediately
+      socket.onopen = () => {
+        const { setOnlineUser } = useChatStore.getState();
+        // Reset all known friends to offline; backend will fire user_status:online for each online user
+        const { friends } = useChatStore.getState();
+        friends.forEach((f: any) => setOnlineUser(f.id, false));
+      };
 
-      if (eventType === 'chat_message') {
-        const otherUserId = msg.sender_id === currentUser?.id ? msg.receiver_id : msg.sender_id;
-        addMessage(otherUserId, msg);
-
-        if (msg.sender_id !== currentUser?.id && activeChatUserId !== msg.sender_id) {
-          incrementUnread(msg.sender_id);
-        }
-      } else if (eventType === 'user_status') {
-        setOnlineUser(msg.user_id, msg.status === 'online');
-      } else if (eventType === 'typing') {
-        setTypingUser(msg.user_id, msg.is_typing);
-      } else if (eventType === 'message_edit' || eventType === 'message_delete') {
-        const otherUserId = msg.receiver_id === currentUser?.id ? msg.sender_id : msg.receiver_id;
-        updateMessage(otherUserId, msg.message_id, msg);
-      } else if (eventType === 'messages_read') {
-        // msg.message_ids, msg.reader_id
-        const otherUserId = msg.reader_id;
-        msg.message_ids.forEach((id: string) => {
-          updateMessage(otherUserId, id, { status: 'READ' });
-        });
-      } else if (eventType === 'message_reaction') {
-        // msg is the ReactionResponse object
-        // we need to know the other user ID
-        // msg payload has message_id, user_id, emoji, timestamp.
-        // Wait, the message_reaction event comes TO us, but we don't know who the original message belongs to from just the reaction.
-        // Actually, if we are the receiver of the event, the reaction happened in a chat between us and msg.user_id (the reactor) OR we reacted and this is our own broadcast (wait, broadcast goes to the other user).
-        // If the other user reacted, `msg.user_id` is the other user. 
-        // If WE reacted, the backend doesn't send us a WS event (the API returns it), but if it does, `msg.user_id` is us.
-        // Let's iterate through messages if we have to, or just find it.
-        // A simple way is to check if `msg.user_id` is in our messages store keys.
-        const otherUserId = msg.user_id === currentUser?.id ? activeChatUserId : msg.user_id;
-        if (otherUserId) {
-          addReaction(otherUserId, msg.message_id, msg);
-        }
-      } else if (eventType === 'user_unfriended') {
-        const friendId = msg.friend_id;
-        removeFriendData(friendId);
-        triggerSidebarRefresh();
+      socket.onmessage = (event) => {
+        const data = JSON.parse(event.data);
         
-        // If we are currently chatting with this user, redirect to dashboard
-        if (activeChatUserId === friendId) {
-          router.push('/dashboard');
+        const eventType = data.type || 'chat_message';
+        const msg = data.payload || data;
+
+        const { 
+          currentUser, 
+          activeChatUserId, 
+          addMessage, 
+          incrementUnread,
+          setOnlineUser,
+          setTypingUser,
+          updateMessage,
+          addReaction,
+          removeFriendData,
+          triggerSidebarRefresh
+        } = useChatStore.getState();
+
+        if (eventType === 'chat_message') {
+          const otherUserId = msg.sender_id === currentUser?.id ? msg.receiver_id : msg.sender_id;
+          addMessage(otherUserId, msg);
+          if (msg.sender_id !== currentUser?.id && activeChatUserId !== msg.sender_id) {
+            incrementUnread(msg.sender_id);
+          }
+        } else if (eventType === 'user_status') {
+          setOnlineUser(msg.user_id, msg.status === 'online');
+        } else if (eventType === 'typing') {
+          setTypingUser(msg.user_id, msg.is_typing);
+        } else if (eventType === 'message_edit' || eventType === 'message_delete') {
+          const otherUserId = msg.receiver_id === currentUser?.id ? msg.sender_id : msg.receiver_id;
+          updateMessage(otherUserId, msg.message_id, msg);
+        } else if (eventType === 'messages_read') {
+          const otherUserId = msg.reader_id;
+          msg.message_ids.forEach((id: string) => {
+            updateMessage(otherUserId, id, { status: 'READ' });
+          });
+        } else if (eventType === 'message_reaction') {
+          const otherUserId = msg.user_id === currentUser?.id ? activeChatUserId : msg.user_id;
+          if (otherUserId) addReaction(otherUserId, msg.message_id, msg);
+        } else if (eventType === 'user_unfriended') {
+          const friendId = msg.friend_id;
+          removeFriendData(friendId);
+          triggerSidebarRefresh();
+          if (activeChatUserId === friendId) router.push('/dashboard');
         }
-      }
+      };
+
+      socket.onerror = () => console.warn('WebSocket error');
+
+      socket.onclose = () => {
+        wsClient.socket = null;
+        // Auto-reconnect after 3 seconds if not intentionally destroyed
+        if (!destroyed) {
+          reconnectTimer = setTimeout(connect, 3000);
+        }
+      };
     };
 
-    socket.onerror = () => console.warn('WebSocket connection error');
+    connect();
 
     return () => {
-      socket.close();
+      destroyed = true;
+      if (reconnectTimer) clearTimeout(reconnectTimer);
+      if (socket) socket.close();
       wsClient.socket = null;
     };
   }, [user?.id]); // reconnect only if the logged-in user changes
