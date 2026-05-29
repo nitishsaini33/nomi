@@ -17,38 +17,40 @@ class ConnectionManager:
             self.pubsub_task = asyncio.create_task(self._listen_to_redis())
 
     async def _listen_to_redis(self):
-        try:
-            redis = await get_redis()
-            if not redis:
-                return
-            
-            pubsub = redis.pubsub()
-            await pubsub.subscribe(self.channel_name)
-            
-            async for message in pubsub.listen():
-                if message["type"] == "message":
-                    data = json.loads(message["data"])
-                    target = data.get("target")
-                    payload = data.get("payload")
-                    
-                    if target == "ALL":
-                        # Send to everyone locally connected to this worker
-                        for connections in self.active_connections.values():
-                            for connection in connections:
+        while True:
+            try:
+                redis = await get_redis()
+                if not redis:
+                    await asyncio.sleep(5)
+                    continue
+                
+                pubsub = redis.pubsub()
+                await pubsub.subscribe(self.channel_name)
+                
+                async for message in pubsub.listen():
+                    if message["type"] == "message":
+                        data = json.loads(message["data"])
+                        target = data.get("target")
+                        payload = data.get("payload")
+                        
+                        if target == "ALL":
+                            # Send to everyone locally connected to this worker
+                            for connections in self.active_connections.values():
+                                for connection in connections:
+                                    try:
+                                        await connection.send_text(json.dumps(payload))
+                                    except:
+                                        pass
+                        elif target in self.active_connections:
+                            # Send to specific user locally connected
+                            for connection in self.active_connections[target]:
                                 try:
                                     await connection.send_text(json.dumps(payload))
                                 except:
                                     pass
-                    elif target in self.active_connections:
-                        # Send to specific user locally connected
-                        for connection in self.active_connections[target]:
-                            try:
-                                await connection.send_text(json.dumps(payload))
-                            except:
-                                pass
-        except Exception as e:
-            logging.error(f"Redis PubSub Error: {e}")
-            self.pubsub_task = None
+            except Exception as e:
+                logging.error(f"Redis PubSub Error: {e}")
+                await asyncio.sleep(2)  # Reconnect on error
 
     async def connect(self, websocket: WebSocket, user_id: str):
         await websocket.accept()

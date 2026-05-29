@@ -8,7 +8,8 @@ async def init_redis():
     redis_client = redis.from_url(
         settings.REDIS_URL,
         encoding="utf-8",
-        decode_responses=True
+        decode_responses=True,
+        health_check_interval=30
     )
     
 async def close_redis():
