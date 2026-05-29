@@ -14,6 +14,9 @@ interface ChatStore {
   activeChatUserId: string | null;
   setActiveChatUserId: (id: string | null) => void;
 
+  friends: User[];
+  setFriends: (friends: User[]) => void;
+
   messages: Record<string, any[]>;
   addMessage: (userId: string, message: any) => void;
   /** Smart-merge: keeps in-flight WS messages not yet in the fetch response */
@@ -50,6 +53,9 @@ export const useChatStore = create<ChatStore>()(
 
       activeChatUserId: null,
       setActiveChatUserId: (id) => set({ activeChatUserId: id }),
+
+      friends: [],
+      setFriends: (friends) => set({ friends }),
 
       messages: {},
 
@@ -237,6 +243,7 @@ export const useChatStore = create<ChatStore>()(
         messages: state.messages,
         lastMessageTimes: state.lastMessageTimes,
         unreadCounts: state.unreadCounts,
+        friends: state.friends,
       }),
     }
   )

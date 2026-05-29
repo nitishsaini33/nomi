@@ -20,14 +20,22 @@ function timeAgo(epochMs: number): string {
 }
 
 export default function Sidebar({ user }: { user: any }) {
-  const [friends, setFriends] = useState<any[]>([]);
   const [search, setSearch] = useState('');
   const [searchResults, setSearchResults] = useState<any[]>([]);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [pendingRequestCount, setPendingRequestCount] = useState(0);
   const router = useRouter();
 
-  const { setCurrentUser, unreadCounts, lastMessageTimes, setLastMessageTime, onlineUsers, sidebarRefreshKey } = useChatStore();
+  const { 
+    setCurrentUser, 
+    unreadCounts, 
+    lastMessageTimes, 
+    setLastMessageTime, 
+    onlineUsers, 
+    sidebarRefreshKey,
+    friends,
+    setFriends 
+  } = useChatStore();
 
   useEffect(() => {
     fetchFriends();
