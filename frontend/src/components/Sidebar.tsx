@@ -128,9 +128,13 @@ export default function Sidebar({ user }: { user: any }) {
 
       {/* ── Header ── */}
       <div className="flex-shrink-0 flex justify-between items-center px-3 sm:px-4 py-3 border-b-4 border-text bg-background">
-        <div className="font-black text-sm sm:text-base md:text-lg uppercase bg-primary text-text px-2 py-1 transform -rotate-1 truncate max-w-[55%]">
+        <button
+          onClick={() => router.push('/dashboard')}
+          className="font-black text-sm sm:text-base md:text-lg uppercase bg-primary text-text px-2 py-1 transform -rotate-1 truncate max-w-[55%] hover:bg-text hover:text-white transition-colors cursor-pointer"
+          title="Go to Dashboard"
+        >
           {user.username}
-        </div>
+        </button>
         <div className="flex gap-1 sm:gap-2">
           <button
             onClick={() => {
