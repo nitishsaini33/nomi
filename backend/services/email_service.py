@@ -3,6 +3,25 @@ from email.message import EmailMessage
 from core.config import settings
 import asyncio
 import logging
+import socket
+from contextlib import contextmanager
+
+@contextmanager
+def force_ipv4_resolution():
+    """Temporarily monkey-patch socket.getaddrinfo to only return IPv4 addresses."""
+    original_getaddrinfo = socket.getaddrinfo
+    
+    def ipv4_getaddrinfo(*args, **kwargs):
+        responses = original_getaddrinfo(*args, **kwargs)
+        # Filter for IPv4 (AF_INET = 2)
+        ipv4_responses = [r for r in responses if r[0] == socket.AF_INET]
+        return ipv4_responses if ipv4_responses else responses
+        
+    socket.getaddrinfo = ipv4_getaddrinfo
+    try:
+        yield
+    finally:
+        socket.getaddrinfo = original_getaddrinfo
 
 def _send_otp_email_sync(to_email: str, otp: str):
     try:
@@ -28,16 +47,16 @@ def _send_otp_email_sync(to_email: str, otp: str):
         msg.set_content("Your OTP is: " + otp) # Plain text fallback
         msg.add_alternative(html_content, subtype='html')
 
-        if settings.SMTP_PORT == 465:
-            with smtplib.SMTP_SSL(settings.SMTP_SERVER, settings.SMTP_PORT, source_address=('0.0.0.0', 0)) as server:
-                server.login(settings.SMTP_USERNAME, settings.SMTP_PASSWORD)
-                server.send_message(msg)
-        else:
-            with smtplib.SMTP(settings.SMTP_SERVER, settings.SMTP_PORT, source_address=('0.0.0.0', 0)) as server:
-                server.starttls()
-                server.login(settings.SMTP_USERNAME, settings.SMTP_PASSWORD)
-                server.send_message(msg)
-            
+        with force_ipv4_resolution():
+            if settings.SMTP_PORT == 465:
+                with smtplib.SMTP_SSL(settings.SMTP_SERVER, settings.SMTP_PORT) as server:
+                    server.login(settings.SMTP_USERNAME, settings.SMTP_PASSWORD)
+                    server.send_message(msg)
+            else:
+                with smtplib.SMTP(settings.SMTP_SERVER, settings.SMTP_PORT) as server:
+                    server.starttls()
+                    server.login(settings.SMTP_USERNAME, settings.SMTP_PASSWORD)
+                    server.send_message(msg)
             
         logging.info(f"Successfully sent OTP to {to_email}")
         return True
