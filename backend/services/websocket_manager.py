@@ -49,8 +49,9 @@ class ConnectionManager:
                                         pass
                 except Exception as inner_e:
                     # If the connection drops silently, listen() will raise a TimeoutError or ConnectionError.
-                    # We gracefully ignore it here so the outer loop reconnects without spamming.
                     pass
+                finally:
+                    await pubsub.close()
                     
             except Exception as e:
                 # Only log non-timeout/connection errors, or keep it as a warning
