@@ -61,6 +61,12 @@ export const useChatStore = create<ChatStore>()(
             return state;
           }
           
+          // Normalize naive UTC timestamps from backend
+          const safeTimestamp = message.timestamp.endsWith('Z') || message.timestamp.includes('+') 
+            ? message.timestamp 
+            : message.timestamp + 'Z';
+          message.timestamp = safeTimestamp;
+
           // If this is a server-confirmed message, replace the matching optimistic one
           if (message.id && !message.id.startsWith('optimistic-')) {
             const optimisticIdx = existing.findIndex(
@@ -95,12 +101,18 @@ export const useChatStore = create<ChatStore>()(
 
       setMessages: (userId, fetched) =>
         set((state) => {
+          // Normalize timestamps
+          const normalizedFetched = fetched.map((m: any) => ({
+            ...m,
+            timestamp: m.timestamp.endsWith('Z') || m.timestamp.includes('+') ? m.timestamp : m.timestamp + 'Z'
+          }));
+
           // Keep any WS messages that arrived DURING the fetch (not yet in DB response)
           // Also keeps messages from localStorage that are older than the fetch window
           const existing = state.messages[userId] || [];
-          const fetchedIds = new Set(fetched.map((m: any) => m.id));
+          const fetchedIds = new Set(normalizedFetched.map((m: any) => m.id));
           const wsOnly = existing.filter((m: any) => m.id && !fetchedIds.has(m.id));
-          const merged = [...fetched, ...wsOnly].sort(
+          const merged = [...normalizedFetched, ...wsOnly].sort(
             (a: any, b: any) =>
               new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime()
           );
@@ -149,15 +161,20 @@ export const useChatStore = create<ChatStore>()(
 
       lastMessageTimes: {},
       setLastMessageTime: (userId, isoTimestamp) =>
-        set((state) => ({
-          lastMessageTimes: {
-            ...state.lastMessageTimes,
-            [userId]: Math.max(
-              state.lastMessageTimes[userId] || 0,
-              new Date(isoTimestamp).getTime()
-            ),
-          },
-        })),
+        set((state) => {
+          const safeTimestamp = isoTimestamp.endsWith('Z') || isoTimestamp.includes('+') 
+            ? isoTimestamp 
+            : isoTimestamp + 'Z';
+          return {
+            lastMessageTimes: {
+              ...state.lastMessageTimes,
+              [userId]: Math.max(
+                state.lastMessageTimes[userId] || 0,
+                new Date(safeTimestamp).getTime()
+              ),
+            },
+          };
+        }),
 
       onlineUsers: {},
       setOnlineUser: (userId, isOnline) =>
