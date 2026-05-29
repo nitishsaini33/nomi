@@ -1,35 +1,17 @@
-import smtplib
-from email.message import EmailMessage
+import resend
 from core.config import settings
 import asyncio
 import logging
-import socket
-from contextlib import contextmanager
 
-@contextmanager
-def force_ipv4_resolution():
-    """Temporarily monkey-patch socket.getaddrinfo to only return IPv4 addresses."""
-    original_getaddrinfo = socket.getaddrinfo
-    
-    def ipv4_getaddrinfo(*args, **kwargs):
-        responses = original_getaddrinfo(*args, **kwargs)
-        # Filter for IPv4 (AF_INET = 2)
-        ipv4_responses = [r for r in responses if r[0] == socket.AF_INET]
-        return ipv4_responses if ipv4_responses else responses
-        
-    socket.getaddrinfo = ipv4_getaddrinfo
-    try:
-        yield
-    finally:
-        socket.getaddrinfo = original_getaddrinfo
+# Initialize resend with the API key from config
+resend.api_key = settings.RESEND_API_KEY
 
 def _send_otp_email_sync(to_email: str, otp: str):
+    if not resend.api_key:
+        logging.error("RESEND_API_KEY is not set. Cannot send email.")
+        return False
+        
     try:
-        msg = EmailMessage()
-        msg['Subject'] = 'Your Chat App Verification Code'
-        msg['From'] = f"Modern Chat App <{settings.SMTP_USERNAME}>"
-        msg['To'] = to_email
-
         html_content = f"""
         <html>
             <body style="font-family: Arial, sans-serif; background-color: #f4f4f4; padding: 20px;">
@@ -44,24 +26,22 @@ def _send_otp_email_sync(to_email: str, otp: str):
             </body>
         </html>
         """
-        msg.set_content("Your OTP is: " + otp) # Plain text fallback
-        msg.add_alternative(html_content, subtype='html')
-
-        with force_ipv4_resolution():
-            if settings.SMTP_PORT == 465:
-                with smtplib.SMTP_SSL(settings.SMTP_SERVER, settings.SMTP_PORT) as server:
-                    server.login(settings.SMTP_USERNAME, settings.SMTP_PASSWORD)
-                    server.send_message(msg)
-            else:
-                with smtplib.SMTP(settings.SMTP_SERVER, settings.SMTP_PORT) as server:
-                    server.starttls()
-                    server.login(settings.SMTP_USERNAME, settings.SMTP_PASSWORD)
-                    server.send_message(msg)
-            
-        logging.info(f"Successfully sent OTP to {to_email}")
+        
+        # Resend requires a verified domain to send FROM. 
+        # For testing, Resend allows sending from 'onboarding@resend.dev' to the registered email address.
+        # Once you verify a domain (like yourdomain.com), change this to "Modern Chat App <noreply@yourdomain.com>".
+        
+        r = resend.Emails.send({
+            "from": "Modern Chat App <onboarding@resend.dev>",
+            "to": to_email,
+            "subject": "Your Chat App Verification Code",
+            "html": html_content
+        })
+        
+        logging.info(f"Successfully sent OTP to {to_email} via Resend. Response: {r}")
         return True
     except Exception as e:
-        logging.error(f"Failed to send email to {to_email}: {e}")
+        logging.error(f"Failed to send email to {to_email} via Resend: {e}")
         return False
 
 async def send_otp_email(to_email: str, otp: str) -> bool:
