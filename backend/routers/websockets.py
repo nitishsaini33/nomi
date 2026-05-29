@@ -39,7 +39,8 @@ async def websocket_endpoint(websocket: WebSocket, token: str):
             await manager.broadcast({"type": "user_status", "payload": {"user_id": user.id, "status": "online"}})
             
             # Tell this new user about everyone else who is already online
-            for online_user_id in manager.get_online_users():
+            online_users = await manager.get_online_users()
+            for online_user_id in online_users:
                 if online_user_id != user.id:
                     try:
                         await websocket.send_text(json.dumps({
