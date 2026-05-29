@@ -12,9 +12,23 @@ class ConnectionManager:
         self.pubsub_task = None
         self.channel_name = "chat_broadcast"
 
+        self.keepalive_task = None
+
+    async def _keepalive_loop(self):
+        while True:
+            await asyncio.sleep(20)
+            try:
+                redis = await get_redis()
+                if redis:
+                    await redis.publish(self.channel_name, '{"type": "keepalive"}')
+            except Exception:
+                pass
+
     async def start_pubsub(self):
         if self.pubsub_task is None:
             self.pubsub_task = asyncio.create_task(self._listen_to_redis())
+        if self.keepalive_task is None:
+            self.keepalive_task = asyncio.create_task(self._keepalive_loop())
 
     async def _listen_to_redis(self):
         while True:
@@ -23,49 +37,43 @@ class ConnectionManager:
                 if not redis:
                     await asyncio.sleep(5)
                     continue
-                
+                    
                 pubsub = redis.pubsub()
                 await pubsub.subscribe(self.channel_name)
                 
                 try:
-                    while True:
-                        try:
-                            message = await pubsub.get_message(ignore_subscribe_messages=True, timeout=10.0)
-                            if message is not None and message["type"] == "message":
-                                data = json.loads(message["data"])
-                                target = data.get("target")
-                                payload = data.get("payload")
+                    async for message in pubsub.listen():
+                        if message["type"] == "message":
+                            if message["data"] == b'{"type": "keepalive"}':
+                                continue
                                 
-                                if target == "ALL":
-                                    for connections in self.active_connections.values():
-                                        for connection in connections:
-                                            try:
-                                                await connection.send_text(json.dumps(payload))
-                                            except:
-                                                pass
-                                elif target in self.active_connections:
-                                    for connection in self.active_connections[target]:
+                            data = json.loads(message["data"])
+                            target = data.get("target")
+                            payload = data.get("payload")
+                            
+                            if target == "ALL":
+                                for connections in self.active_connections.values():
+                                    for connection in connections:
                                         try:
                                             await connection.send_text(json.dumps(payload))
                                         except:
                                             pass
-                            # Manually send PING to keep connection alive on cloud load balancers
-                            await pubsub.ping()
-                        except asyncio.TimeoutError:
-                            # If get_message times out with no messages, just ping
-                            await pubsub.ping()
-                            continue
+                            elif target in self.active_connections:
+                                for connection in self.active_connections[target]:
+                                    try:
+                                        await connection.send_text(json.dumps(payload))
+                                    except:
+                                        pass
                 except Exception as inner_e:
-                    # If the connection drops silently, it will raise here. Allow outer loop to reconnect.
+                    # Ignore inner drops to allow reconnect
                     pass
                 finally:
                     await pubsub.close()
                     
             except Exception as e:
-                # Only log non-timeout/connection errors, or keep it as a warning
-                if "Timeout" not in str(e) and "Connection" not in str(e):
-                    logging.warning(f"Redis PubSub Error: {e}")
-                await asyncio.sleep(2)  # Reconnect on error
+                # Log actual reconnection events
+                logging.warning(f"Redis PubSub reconnecting: {e}")
+                await asyncio.sleep(2)
 
     async def connect(self, websocket: WebSocket, user_id: str):
         await websocket.accept()
@@ -77,9 +85,12 @@ class ConnectionManager:
         await self.start_pubsub()
         
         # Register in global Redis set
-        redis = await get_redis()
-        if redis:
-            await redis.sadd("online_users", user_id)
+        try:
+            redis = await get_redis()
+            if redis:
+                await redis.sadd("online_users", user_id)
+        except Exception as e:
+            logging.error(f"Redis sadd error: {e}")
             
     def disconnect(self, websocket: WebSocket, user_id: str):
         if user_id in self.active_connections:
@@ -111,13 +122,17 @@ class ConnectionManager:
                 asyncio.create_task(cleanup())
 
     async def send_personal_message(self, message: dict, user_id: str):
-        redis = await get_redis()
-        if redis:
-            await redis.publish(
-                self.channel_name, 
-                json.dumps({"target": user_id, "payload": message})
-            )
-        else:
+        try:
+            redis = await get_redis()
+            if redis:
+                await redis.publish(
+                    self.channel_name, 
+                    json.dumps({"target": user_id, "payload": message})
+                )
+            else:
+                raise Exception("Redis not available")
+        except Exception as e:
+            logging.error(f"Redis publish error (personal): {e}")
             # Fallback if redis is down
             if user_id in self.active_connections:
                 for connection in self.active_connections[user_id]:
@@ -127,13 +142,17 @@ class ConnectionManager:
                         pass
 
     async def broadcast(self, message: dict):
-        redis = await get_redis()
-        if redis:
-            await redis.publish(
-                self.channel_name, 
-                json.dumps({"target": "ALL", "payload": message})
-            )
-        else:
+        try:
+            redis = await get_redis()
+            if redis:
+                await redis.publish(
+                    self.channel_name, 
+                    json.dumps({"target": "ALL", "payload": message})
+                )
+            else:
+                raise Exception("Redis not available")
+        except Exception as e:
+            logging.error(f"Redis publish error (broadcast): {e}")
             for user_id, connections in self.active_connections.items():
                 for connection in connections:
                     try:
