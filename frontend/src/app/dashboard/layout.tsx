@@ -32,7 +32,8 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
     const token = localStorage.getItem('token');
     if (!token) return;
 
-    const socket = new WebSocket(`ws://localhost:8000/ws?token=${token}`);
+    const wsBaseUrl = process.env.NEXT_PUBLIC_WS_URL || 'ws://localhost:8000';
+    const socket = new WebSocket(`${wsBaseUrl}/ws?token=${token}`);
     wsClient.socket = socket;
 
     socket.onmessage = (event) => {
