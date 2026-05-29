@@ -53,3 +53,12 @@ class Token(BaseModel):
 class LoginRequest(BaseModel):
     identifier: str   # username or email
     password: str
+
+# Used to request an OTP before registration
+class SendOTPRequest(UserCreate):
+    pass
+
+# Used to verify the OTP and complete registration
+class VerifyOTPRequest(BaseModel):
+    email: str
+    otp: str
