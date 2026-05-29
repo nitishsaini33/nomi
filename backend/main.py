@@ -32,6 +32,20 @@ async def startup():
     async with engine.begin() as conn:
         await conn.run_sync(Base.metadata.create_all)
         
+        # Auto-migration: add email column if it doesn't exist yet (safe to run on every restart)
+        from sqlalchemy import text
+        try:
+            await conn.execute(text("ALTER TABLE users ADD COLUMN IF NOT EXISTS email VARCHAR UNIQUE"))
+        except Exception:
+            pass  # Column already exists or DB doesn't support IF NOT EXISTS — fine either way
+        
+        try:
+            await conn.execute(text(
+                "CREATE UNIQUE INDEX IF NOT EXISTS ix_users_email ON users (email) WHERE email IS NOT NULL"
+            ))
+        except Exception:
+            pass  # Index already exists
+
 @app.on_event("shutdown")
 async def shutdown():
     await close_redis()
