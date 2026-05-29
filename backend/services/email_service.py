@@ -28,10 +28,16 @@ def _send_otp_email_sync(to_email: str, otp: str):
         msg.set_content("Your OTP is: " + otp) # Plain text fallback
         msg.add_alternative(html_content, subtype='html')
 
-        with smtplib.SMTP(settings.SMTP_SERVER, settings.SMTP_PORT) as server:
-            server.starttls()
-            server.login(settings.SMTP_USERNAME, settings.SMTP_PASSWORD)
-            server.send_message(msg)
+        if settings.SMTP_PORT == 465:
+            with smtplib.SMTP_SSL(settings.SMTP_SERVER, settings.SMTP_PORT, source_address=('0.0.0.0', 0)) as server:
+                server.login(settings.SMTP_USERNAME, settings.SMTP_PASSWORD)
+                server.send_message(msg)
+        else:
+            with smtplib.SMTP(settings.SMTP_SERVER, settings.SMTP_PORT, source_address=('0.0.0.0', 0)) as server:
+                server.starttls()
+                server.login(settings.SMTP_USERNAME, settings.SMTP_PASSWORD)
+                server.send_message(msg)
+            
             
         logging.info(f"Successfully sent OTP to {to_email}")
         return True
