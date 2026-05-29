@@ -24,31 +24,39 @@ class ConnectionManager:
                     await asyncio.sleep(5)
                     continue
                 
-                pubsub = redis.pubsub(ping_interval=20)
+                pubsub = redis.pubsub()
                 await pubsub.subscribe(self.channel_name)
                 
                 try:
-                    async for message in pubsub.listen():
-                        if message["type"] == "message":
-                            data = json.loads(message["data"])
-                            target = data.get("target")
-                            payload = data.get("payload")
-                            
-                            if target == "ALL":
-                                for connections in self.active_connections.values():
-                                    for connection in connections:
+                    while True:
+                        try:
+                            message = await pubsub.get_message(ignore_subscribe_messages=True, timeout=10.0)
+                            if message is not None and message["type"] == "message":
+                                data = json.loads(message["data"])
+                                target = data.get("target")
+                                payload = data.get("payload")
+                                
+                                if target == "ALL":
+                                    for connections in self.active_connections.values():
+                                        for connection in connections:
+                                            try:
+                                                await connection.send_text(json.dumps(payload))
+                                            except:
+                                                pass
+                                elif target in self.active_connections:
+                                    for connection in self.active_connections[target]:
                                         try:
                                             await connection.send_text(json.dumps(payload))
                                         except:
                                             pass
-                            elif target in self.active_connections:
-                                for connection in self.active_connections[target]:
-                                    try:
-                                        await connection.send_text(json.dumps(payload))
-                                    except:
-                                        pass
+                            # Manually send PING to keep connection alive on cloud load balancers
+                            await pubsub.ping()
+                        except asyncio.TimeoutError:
+                            # If get_message times out with no messages, just ping
+                            await pubsub.ping()
+                            continue
                 except Exception as inner_e:
-                    # If the connection drops silently, listen() will raise a TimeoutError or ConnectionError.
+                    # If the connection drops silently, it will raise here. Allow outer loop to reconnect.
                     pass
                 finally:
                     await pubsub.close()
