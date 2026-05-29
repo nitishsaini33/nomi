@@ -1,5 +1,5 @@
 'use client'
-import { useState, useEffect, useLayoutEffect, useRef } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { api } from '@/lib/api';
 import { useChatStore } from '@/store/chatStore';
 import { wsClient } from '@/lib/wsClient';
@@ -48,20 +48,25 @@ export default function ChatWindow({
     fetchMessages();
 
     return () => {
-      // Chat closed — no longer an active chat
+      // Chat closed — reset scroll tracker so next open starts fresh
+      initialScrollDoneRef.current = null;
       setActiveChatUserId(null);
     };
   }, [otherUserId]);
 
-  // On first open of a chat (or switching chats): scroll to very bottom after DOM paint
-  useLayoutEffect(() => {
-    if (initialScrollDoneRef.current !== otherUserId && chatMessages.length > 0) {
-      bottomRef.current?.scrollIntoView({ behavior: 'instant' });
-      initialScrollDoneRef.current = otherUserId;
-    }
-  }, [otherUserId, chatMessages.length > 0]);
+  /** Reliably scrolls to bottom after browser fully paints all message elements */
+  const scrollToBottom = (smooth = false) => {
+    // Double-RAF: first frame commits DOM, second frame recalculates layout heights
+    requestAnimationFrame(() => {
+      requestAnimationFrame(() => {
+        if (scrollRef.current) {
+          scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
+        }
+      });
+    });
+  };
 
-  // On new incoming messages: only auto-scroll if already near bottom
+  // Scroll logic: initial open jumps to bottom, new messages auto-scroll if near bottom
   useEffect(() => {
     if (isLoadingMore) {
       // Restore scroll position after loading older messages
@@ -72,11 +77,18 @@ export default function ChatWindow({
       return;
     }
 
-    if (initialScrollDoneRef.current === otherUserId && scrollRef.current) {
-      const { scrollTop, scrollHeight, clientHeight } = scrollRef.current;
-      const isNearBottom = scrollHeight - scrollTop - clientHeight < 120;
-      if (isNearBottom) {
-        bottomRef.current?.scrollIntoView({ behavior: 'smooth' });
+    if (chatMessages.length === 0) return;
+
+    if (initialScrollDoneRef.current !== otherUserId) {
+      // First open — always jump to bottom
+      scrollToBottom();
+      initialScrollDoneRef.current = otherUserId;
+    } else {
+      // Already open — only auto-scroll if near bottom (don't interrupt reading old msgs)
+      if (scrollRef.current) {
+        const { scrollTop, scrollHeight, clientHeight } = scrollRef.current;
+        const isNearBottom = scrollHeight - scrollTop - clientHeight < 120;
+        if (isNearBottom) scrollToBottom();
       }
     }
     
