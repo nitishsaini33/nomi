@@ -12,6 +12,8 @@ from schemas.user import UserResponse
 from schemas.connection import ConnectionResponse
 from services.auth_service import get_current_user
 from services.websocket_manager import manager
+from models.reaction import Reaction
+from models.block import Block
 
 router = APIRouter(prefix="/users", tags=["users"])
 
@@ -116,3 +118,31 @@ async def unfriend_user(friend_id: str, db: AsyncSession = Depends(get_db), curr
     )
     
     return {"message": "Unfriended successfully and all chat data deleted"}
+
+@router.delete("/me")
+async def delete_my_account(db: AsyncSession = Depends(get_db), current_user: User = Depends(get_current_user)):
+    from sqlalchemy import delete
+    uid = current_user.id
+    
+    # Manually delete dependent records to bypass FK cascade restrictions
+    # 1. Reactions
+    await db.execute(delete(Reaction).where(Reaction.user_id == uid))
+    
+    # 2. Blocks
+    await db.execute(delete(Block).where((Block.blocker_id == uid) | (Block.blocked_id == uid)))
+    
+    # 3. Connections (friendships/requests)
+    await db.execute(delete(Connection).where((Connection.requester_id == uid) | (Connection.receiver_id == uid)))
+    
+    # 4. Messages
+    await db.execute(delete(Message).where((Message.sender_id == uid) | (Message.receiver_id == uid)))
+    
+    # 5. Finally, the user
+    await db.execute(delete(User).where(User.id == uid))
+    
+    await db.commit()
+    
+    # Tell EVERYONE globally that this user is deleted so they can scrub them from local states
+    await manager.broadcast({"type": "user_deleted", "payload": {"user_id": uid}})
+    
+    return {"message": "Account deleted successfully"}

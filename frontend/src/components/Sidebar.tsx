@@ -1,7 +1,7 @@
 'use client'
 import { useState, useEffect } from 'react';
 import { api } from '@/lib/api';
-import { UserPlus, Search, LogOut } from 'lucide-react';
+import { UserPlus, Search, LogOut, Trash2 } from 'lucide-react';
 import RequestModal from './RequestModal';
 import { useRouter } from 'next/navigation';
 import { useChatStore } from '@/store/chatStore';
@@ -103,6 +103,22 @@ export default function Sidebar({ user }: { user: any }) {
     router.push('/login');
   };
 
+  const handleDeleteAccount = async () => {
+    const confirm1 = confirm("Are you sure you want to delete your account? This action cannot be undone.");
+    if (!confirm1) return;
+    
+    const confirm2 = confirm("WARNING: This will permanently delete ALL your messages, friends, and data. Type OK to proceed.");
+    if (!confirm2) return;
+
+    try {
+      await api.delete('/users/me');
+      alert('Account deleted successfully.');
+      handleLogout();
+    } catch (e: any) {
+      alert(e.message || 'Failed to delete account');
+    }
+  };
+
   /**
    * Sort friends list:
    * 1. Friends with unread messages come first (most unread → top)
@@ -163,9 +179,16 @@ export default function Sidebar({ user }: { user: any }) {
             )}
           </button>
           <button
+            onClick={handleDeleteAccount}
+            title="Delete Account"
+            className="p-2 bg-background border-2 border-text text-red-500 hover:bg-red-500 hover:text-white transition-colors"
+          >
+            <Trash2 size={16} />
+          </button>
+          <button
             onClick={handleLogout}
             title="Logout"
-            className="p-2 bg-background border-2 border-text hover:bg-red-500 hover:text-white transition-colors"
+            className="p-2 bg-background border-2 border-text hover:bg-text hover:text-white transition-colors"
           >
             <LogOut size={16} />
           </button>

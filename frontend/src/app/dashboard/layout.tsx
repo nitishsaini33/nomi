@@ -90,8 +90,9 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
         } else if (eventType === 'message_reaction') {
           const otherUserId = msg.user_id === currentUser?.id ? activeChatUserId : msg.user_id;
           if (otherUserId) addReaction(otherUserId, msg.message_id, msg);
-        } else if (eventType === 'user_unfriended') {
-          const friendId = msg.friend_id;
+        } else if (eventType === 'user_unfriended' || eventType === 'user_deleted') {
+          // If a friend unfriends us, OR if any user globally deletes their account, scrub them
+          const friendId = eventType === 'user_deleted' ? msg.user_id : msg.friend_id;
           removeFriendData(friendId);
           triggerSidebarRefresh();
           if (activeChatUserId === friendId) router.push('/dashboard');

@@ -1,12 +1,23 @@
 from pydantic import BaseModel, EmailStr, field_validator
+from email_validator import validate_email, EmailNotValidError
 import re
 
 class UserBase(BaseModel):
     username: str
 
 class UserCreate(UserBase):
-    email: EmailStr
+    email: str
     password: str
+
+    @field_validator('email')
+    @classmethod
+    def email_valid(cls, v: str) -> str:
+        try:
+            # check_deliverability=True checks the domain's MX records to ensure it can receive mail
+            valid = validate_email(v, check_deliverability=True)
+            return valid.normalized
+        except EmailNotValidError as e:
+            raise ValueError(str(e))
 
     @field_validator('username')
     @classmethod
