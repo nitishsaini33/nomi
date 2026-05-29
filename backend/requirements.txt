@@ -4,6 +4,7 @@ sqlalchemy>=2.0.50
 asyncpg>=0.31.0
 pydantic>=2.13.4
 pydantic-settings>=2.14.1
+email-validator>=2.0.0
 python-jose[cryptography]
 bcrypt>=5.0.0
 PyJWT>=2.13.0
