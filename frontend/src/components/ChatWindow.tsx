@@ -1,5 +1,5 @@
 'use client'
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import { api } from '@/lib/api';
 import { useChatStore } from '@/store/chatStore';
 import { wsClient } from '@/lib/wsClient';
@@ -29,80 +29,95 @@ export default function ChatWindow({
   const [isLoadingMore, setIsLoadingMore] = useState(false);
   const [hasMore, setHasMore] = useState(true);
   const [openReactionMsgId, setOpenReactionMsgId] = useState<string | null>(null);
+
+  // Scroll refs
   const scrollRef = useRef<HTMLDivElement>(null);
-  const bottomRef = useRef<HTMLDivElement>(null); // invisible anchor at bottom of messages
+  const bottomRef = useRef<HTMLDivElement>(null);
   const typingTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const lastScrollHeightRef = useRef<number>(0);
-  const initialScrollDoneRef = useRef<string | null>(null); // tracks which chat we've scrolled for
+  const isRestoringScrollRef = useRef(false); // true while loading older msgs
+  const hasScrolledToBottomRef = useRef(false); // has initial scroll fired for current chat
   const router = useRouter();
 
   const chatMessages = messages[otherUserId] || [];
 
+  // ── Reset everything when switching chats ────────────────────────────────
   useEffect(() => {
-    // Tell the store this conversation is now open → stops unread from incrementing
     setActiveChatUserId(otherUserId);
-    // Clear existing unread badge for this friend
     clearUnread(otherUserId);
+    setOtherUser(null);
+    hasScrolledToBottomRef.current = false; // reset so we scroll fresh
 
     fetchOtherUser();
     fetchMessages();
 
     return () => {
-      // Chat closed — reset scroll tracker so next open starts fresh
-      initialScrollDoneRef.current = null;
       setActiveChatUserId(null);
     };
   }, [otherUserId]);
 
-  /** Reliably scrolls to bottom after browser fully paints all message elements */
-  const scrollToBottom = (smooth = false) => {
-    // Double-RAF: first frame commits DOM, second frame recalculates layout heights
-    requestAnimationFrame(() => {
-      requestAnimationFrame(() => {
-        if (scrollRef.current) {
-          scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
-        }
-      });
-    });
-  };
-
-  // Scroll logic: initial open jumps to bottom, new messages auto-scroll if near bottom
-  useEffect(() => {
-    if (isLoadingMore) {
-      // Restore scroll position after loading older messages
+  // ── scrollToBottom helper ────────────────────────────────────────────────
+  const scrollToBottom = useCallback((behavior: ScrollBehavior = 'instant') => {
+    // Use setTimeout(0) to push past React's render cycle AND the browser's
+    // layout recalculation, guaranteeing scrollHeight is final.
+    setTimeout(() => {
       if (scrollRef.current) {
-        scrollRef.current.scrollTop = scrollRef.current.scrollHeight - lastScrollHeightRef.current;
+        scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
       }
-      setIsLoadingMore(false);
+    }, 0);
+  }, []);
+
+  // ── Main scroll effect ───────────────────────────────────────────────────
+  useEffect(() => {
+    if (chatMessages.length === 0) return;
+
+    // Case 1: We just loaded older messages — restore scroll position, don't jump
+    if (isRestoringScrollRef.current) {
+      if (scrollRef.current) {
+        scrollRef.current.scrollTop =
+          scrollRef.current.scrollHeight - lastScrollHeightRef.current;
+      }
+      isRestoringScrollRef.current = false;
       return;
     }
 
-    if (chatMessages.length === 0) return;
+    // Case 2: Initial open — always jump to bottom (once per chat switch)
+    if (!hasScrolledToBottomRef.current) {
+      scrollToBottom('instant');
+      hasScrolledToBottomRef.current = true;
+      return;
+    }
 
-    if (initialScrollDoneRef.current !== otherUserId) {
-      // First open — always jump to bottom
-      scrollToBottom();
-      initialScrollDoneRef.current = otherUserId;
-    } else {
-      // Already open — only auto-scroll if near bottom (don't interrupt reading old msgs)
-      if (scrollRef.current) {
-        const { scrollTop, scrollHeight, clientHeight } = scrollRef.current;
-        const isNearBottom = scrollHeight - scrollTop - clientHeight < 120;
-        if (isNearBottom) scrollToBottom();
+    // Case 3: New message arrived — only auto-scroll if user is near bottom
+    if (scrollRef.current) {
+      const { scrollTop, scrollHeight, clientHeight } = scrollRef.current;
+      const distanceFromBottom = scrollHeight - scrollTop - clientHeight;
+      if (distanceFromBottom < 150) {
+        scrollToBottom('smooth');
       }
     }
-    
-    // Send read receipts for any messages from otherUser that aren't READ
+  }, [chatMessages.length, otherUserId]);
+
+  // Also scroll when otherUser first loads (component transitions from loading → real UI)
+  useEffect(() => {
+    if (otherUser && !hasScrolledToBottomRef.current && chatMessages.length > 0) {
+      scrollToBottom('instant');
+      hasScrolledToBottomRef.current = true;
+    }
+  }, [otherUser]);
+
+  // Send read receipts
+  useEffect(() => {
     const unreadMsgIds = chatMessages
       .filter((m: any) => m.sender_id === otherUserId && m.status !== 'READ')
       .map((m: any) => m.id)
       .filter(Boolean);
-      
     if (unreadMsgIds.length > 0) {
       wsClient.sendReadReceipt(otherUserId, unreadMsgIds);
     }
   }, [chatMessages, otherUserId]);
 
+  // ── Data fetching ────────────────────────────────────────────────────────
   const fetchOtherUser = async () => {
     try {
       const users = await api.get('/users/friends');
@@ -114,24 +129,12 @@ export default function ChatWindow({
   };
 
   const fetchMessages = async (cursor?: string) => {
-    if (!cursor) setHasMore(true); // reset on initial load
-    
+    if (!cursor) setHasMore(true);
     try {
       const url = `/chat/${otherUserId}?limit=50${cursor ? `&cursor=${encodeURIComponent(cursor)}` : ''}`;
       const data = await api.get(url);
-      
-      if (data.length < 50) {
-        setHasMore(false);
-      }
-      
-      if (cursor) {
-        // Prepend old messages. The store will dedup by ID.
-        // Zustand store's `setMessages` currently just merges and sorts.
-        // Actually, we'll let the store handle sorting.
-        setMessages(otherUserId, data); 
-      } else {
-        setMessages(otherUserId, data);
-      }
+      if (data.length < 50) setHasMore(false);
+      setMessages(otherUserId, data);
     } catch (e) {
       console.error(e);
     } finally {
@@ -141,40 +144,29 @@ export default function ChatWindow({
 
   const handleScroll = () => {
     if (!scrollRef.current || isLoadingMore || !hasMore) return;
-    
-    // If scrolled to top
-    if (scrollRef.current.scrollTop === 0) {
-      if (chatMessages.length > 0) {
-        setIsLoadingMore(true);
-        lastScrollHeightRef.current = scrollRef.current.scrollHeight;
-        const oldestMsg = chatMessages[0]; // because they are sorted chronologically
-        fetchMessages(oldestMsg.timestamp);
-      }
+    if (scrollRef.current.scrollTop === 0 && chatMessages.length > 0) {
+      isRestoringScrollRef.current = true;
+      setIsLoadingMore(true);
+      lastScrollHeightRef.current = scrollRef.current.scrollHeight;
+      const oldestMsg = chatMessages[0];
+      fetchMessages(oldestMsg.timestamp);
     }
   };
 
+  // ── Input / send ─────────────────────────────────────────────────────────
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setInput(e.target.value);
-    
-    // Typing indicator logic
     wsClient.sendTyping(otherUserId, true);
     if (typingTimeoutRef.current) clearTimeout(typingTimeoutRef.current);
-    typingTimeoutRef.current = setTimeout(() => {
-      wsClient.sendTyping(otherUserId, false);
-    }, 2000);
+    typingTimeoutRef.current = setTimeout(() => wsClient.sendTyping(otherUserId, false), 2000);
   };
 
-  // Send via the global singleton WebSocket (no own WS connection needed)
   const sendMessage = (e: React.FormEvent) => {
     e.preventDefault();
     if (!input.trim()) return;
-    
     wsClient.sendTyping(otherUserId, false);
     if (typingTimeoutRef.current) clearTimeout(typingTimeoutRef.current);
-    
     const content = input.trim();
-    
-    // Optimistic message — shows in the UI instantly before server confirms
     const optimisticMsg = {
       id: `optimistic-${Date.now()}`,
       sender_id: currentUser.id,
@@ -186,46 +178,33 @@ export default function ChatWindow({
       is_deleted: false,
       reactions: [],
     };
-    
     const { addMessage } = useChatStore.getState();
     addMessage(otherUserId, optimisticMsg);
-    
     const sent = wsClient.sendMessage(otherUserId, content);
     if (sent) setInput('');
   };
 
   const deleteMessage = async (msgId: string) => {
     if (!confirm('Delete this message?')) return;
-    
-    // Optimistic update
-    updateMessage(otherUserId, msgId, { 
-      is_deleted: true, 
-      content: 'This message was deleted' 
-    });
-    
+    updateMessage(otherUserId, msgId, { is_deleted: true, content: 'This message was deleted' });
     try {
       await api.delete(`/chat/message/${msgId}`);
     } catch (e) {
       console.error('Failed to delete', e);
-      // Ideally revert the optimistic update here if needed
     }
   };
 
   const reactToMessage = async (msgId: string, emoji: string) => {
-    setOpenReactionMsgId(null); // close picker immediately
+    setOpenReactionMsgId(null);
     try {
-      // Optimistic update locally
       addReaction(otherUserId, msgId, {
         id: 'temp-' + Date.now(),
         message_id: msgId,
         user_id: currentUser.id,
-        emoji: emoji,
+        emoji,
         timestamp: new Date().toISOString()
       });
-      
       const data = await api.post(`/chat/message/${msgId}/react`, { emoji });
-      // The real ID will be updated when the WS event comes back, or we just leave it.
-      // But the endpoint also returns the reaction, so we can update it immediately.
       addReaction(otherUserId, msgId, data);
     } catch (e) {
       console.error('Failed to react', e);
@@ -234,17 +213,15 @@ export default function ChatWindow({
 
   const handleUnfriend = async () => {
     if (!confirm(`Are you sure you want to unfriend ${otherUser.username}? This will delete all chat history for both of you.`)) return;
-    
     try {
       await api.delete(`/users/friends/${otherUserId}`);
-      // The store update and redirect is handled automatically by the user_unfriended WS event, 
-      // but let's do it optimistically just in case
       router.push('/dashboard');
     } catch (e) {
       console.error('Failed to unfriend', e);
     }
   };
 
+  // ── Render ───────────────────────────────────────────────────────────────
   if (!otherUser) {
     return (
       <div className="flex-1 flex items-center justify-center font-black text-lg sm:text-2xl uppercase p-8 animate-pulse">
@@ -289,6 +266,7 @@ export default function ChatWindow({
         ref={scrollRef}
         onScroll={handleScroll}
         className="flex-1 overflow-y-auto p-3 sm:p-4 space-y-3 sm:space-y-4 bg-[url('data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIyMCIgaGVpZ2h0PSIyMCI+PGNpcmNsZSBjeD0iMiIgY3k9IjIiIHI9IjIiIGZpbGw9IiNjY2MiIG9wYWNpdHk9IjAuNSIvPjwvc3ZnPg==')] bg-repeat"
+        style={{ overflowAnchor: 'none' }}
       >
         {isLoadingMore && (
           <div className="text-center font-bold text-xs opacity-50 py-2">Loading older messages...</div>
@@ -297,7 +275,7 @@ export default function ChatWindow({
         {chatMessages.map((msg: any, i: number) => {
           const isMe = msg.sender_id === currentUser.id;
           const msgAgeMs = Date.now() - new Date(msg.timestamp).getTime();
-          const canDelete = isMe && !msg.is_deleted && msg.id && msgAgeMs < 5 * 60 * 1000; // 5 min window
+          const canDelete = isMe && !msg.is_deleted && msg.id && msgAgeMs < 5 * 60 * 1000;
           return (
             <div
               key={msg.id || i}
@@ -307,15 +285,13 @@ export default function ChatWindow({
                 className={[
                   'max-w-[80%] sm:max-w-[72%] px-3 py-2 font-bold border-2 border-text relative',
                   'shadow-brutal text-sm sm:text-base break-words',
-                  isMe
-                    ? 'bg-primary transform rotate-1'
-                    : 'bg-white transform -rotate-1',
+                  isMe ? 'bg-primary transform rotate-1' : 'bg-white transform -rotate-1',
                   msg.is_deleted ? 'opacity-50 italic' : ''
                 ].join(' ')}
               >
                 {/* Action buttons (visible on hover) */}
                 <div className="absolute -top-3 -right-3 flex gap-1 hidden group-hover:flex z-10">
-                  {/* Reaction Button (for all msgs) */}
+                  {/* Reaction Button */}
                   {!msg.is_deleted && msg.id && (
                     <div className="relative">
                       <button 
@@ -337,7 +313,7 @@ export default function ChatWindow({
                     </div>
                   )}
                   
-                  {/* Delete button (only for my msgs within 5 minutes) */}
+                  {/* Delete button (only within 5 minutes) */}
                   {canDelete && (
                     <button
                       onClick={() => deleteMessage(msg.id)}
@@ -367,10 +343,7 @@ export default function ChatWindow({
                     <span className="text-[9px] sm:text-[10px] font-black opacity-50 mr-1">(edited)</span>
                   )}
                   <div className="text-[9px] sm:text-[10px] font-black opacity-60 text-right">
-                    {new Date(msg.timestamp).toLocaleTimeString([], {
-                      hour: '2-digit',
-                      minute: '2-digit',
-                    })}
+                    {new Date(msg.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                   </div>
                   {/* Read Receipts */}
                   {isMe && (
@@ -394,7 +367,7 @@ export default function ChatWindow({
           </div>
         )}
         
-        {/* ── Typing Indicator Bubble ── */}
+        {/* ── Typing Indicator ── */}
         {typingUsers[otherUserId] && (
           <div className="flex justify-start">
             <div className="px-4 py-2 font-black border-2 border-text shadow-brutal text-sm bg-accent transform -rotate-1 flex items-center gap-1">
@@ -404,8 +377,9 @@ export default function ChatWindow({
             </div>
           </div>
         )}
-        {/* Invisible anchor — scrolled into view to jump to bottom */}
-        <div ref={bottomRef} />
+
+        {/* Invisible scroll anchor at the very bottom */}
+        <div ref={bottomRef} style={{ height: 1 }} />
       </div>
 
       {/* ── Input ── */}
