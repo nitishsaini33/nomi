@@ -1,3 +1,4 @@
+import asyncio
 from fastapi import APIRouter, WebSocket, WebSocketDisconnect, Depends
 from sqlalchemy.ext.asyncio import AsyncSession
 from core.database import AsyncSessionLocal
@@ -87,8 +88,11 @@ async def websocket_endpoint(websocket: WebSocket, token: str):
                         
                         response_event = {"type": "chat_message", "payload": msg_dict}
                         
-                        await manager.send_personal_message(response_event, receiver_id)
-                        await manager.send_personal_message(response_event, user.id)
+                        # Send to receiver and sender concurrently
+                        await asyncio.gather(
+                            manager.send_personal_message(response_event, receiver_id),
+                            manager.send_personal_message(response_event, user.id),
+                        )
                         
                 elif event_type == "typing":
                     receiver_id = payload.get("receiver_id")

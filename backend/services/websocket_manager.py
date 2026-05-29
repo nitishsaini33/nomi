@@ -121,27 +121,45 @@ class ConnectionManager:
                 
                 asyncio.create_task(cleanup())
 
+    async def _send_local(self, message: dict, user_id: str) -> bool:
+        """Send directly to locally connected WebSockets. Returns True if user was found locally."""
+        if user_id in self.active_connections:
+            msg_text = json.dumps(message)
+            for connection in self.active_connections[user_id]:
+                try:
+                    await connection.send_text(msg_text)
+                except:
+                    pass
+            return True
+        return False
+
     async def send_personal_message(self, message: dict, user_id: str):
-        try:
-            redis = await get_redis()
-            if redis:
-                await redis.publish(
-                    self.channel_name, 
-                    json.dumps({"target": user_id, "payload": message})
-                )
-            else:
-                raise Exception("Redis not available")
-        except Exception as e:
-            logging.error(f"Redis publish error (personal): {e}")
-            # Fallback if redis is down
-            if user_id in self.active_connections:
-                for connection in self.active_connections[user_id]:
-                    try:
-                        await connection.send_text(json.dumps(message))
-                    except:
-                        pass
+        # Always send locally first for instant delivery
+        sent_locally = await self._send_local(message, user_id)
+        
+        # Also publish to Redis for other server instances (non-blocking)
+        if not sent_locally:
+            try:
+                redis = await get_redis()
+                if redis:
+                    await redis.publish(
+                        self.channel_name, 
+                        json.dumps({"target": user_id, "payload": message})
+                    )
+            except Exception as e:
+                logging.error(f"Redis publish error (personal): {e}")
 
     async def broadcast(self, message: dict):
+        # Send to all local connections first
+        msg_text = json.dumps(message)
+        for user_id, connections in self.active_connections.items():
+            for connection in connections:
+                try:
+                    await connection.send_text(msg_text)
+                except:
+                    pass
+        
+        # Also publish to Redis for other server instances (non-blocking)
         try:
             redis = await get_redis()
             if redis:
@@ -149,16 +167,8 @@ class ConnectionManager:
                     self.channel_name, 
                     json.dumps({"target": "ALL", "payload": message})
                 )
-            else:
-                raise Exception("Redis not available")
         except Exception as e:
             logging.error(f"Redis publish error (broadcast): {e}")
-            for user_id, connections in self.active_connections.items():
-                for connection in connections:
-                    try:
-                        await connection.send_text(json.dumps(message))
-                    except:
-                        pass
                         
     async def get_online_users(self) -> List[str]:
         redis = await get_redis()

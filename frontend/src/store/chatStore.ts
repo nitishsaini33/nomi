@@ -60,6 +60,28 @@ export const useChatStore = create<ChatStore>()(
           if (message.id && existing.some((m: any) => m.id === message.id)) {
             return state;
           }
+          
+          // If this is a server-confirmed message, replace the matching optimistic one
+          if (message.id && !message.id.startsWith('optimistic-')) {
+            const optimisticIdx = existing.findIndex(
+              (m: any) => m.id?.startsWith('optimistic-') && 
+                          m.sender_id === message.sender_id && 
+                          m.content === message.content
+            );
+            if (optimisticIdx >= 0) {
+              const updated = [...existing];
+              updated[optimisticIdx] = message;
+              const msgTime = new Date(message.timestamp).getTime();
+              return {
+                messages: { ...state.messages, [userId]: updated },
+                lastMessageTimes: {
+                  ...state.lastMessageTimes,
+                  [userId]: Math.max(state.lastMessageTimes[userId] || 0, msgTime),
+                },
+              };
+            }
+          }
+          
           const msgTime = new Date(message.timestamp).getTime();
           return {
             messages: { ...state.messages, [userId]: [...existing, message] },

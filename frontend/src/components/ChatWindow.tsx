@@ -143,7 +143,25 @@ export default function ChatWindow({
     wsClient.sendTyping(otherUserId, false);
     if (typingTimeoutRef.current) clearTimeout(typingTimeoutRef.current);
     
-    const sent = wsClient.sendMessage(otherUserId, input);
+    const content = input.trim();
+    
+    // Optimistic message — shows in the UI instantly before server confirms
+    const optimisticMsg = {
+      id: `optimistic-${Date.now()}`,
+      sender_id: currentUser.id,
+      receiver_id: otherUserId,
+      content,
+      timestamp: new Date().toISOString(),
+      status: 'SENT',
+      is_edited: false,
+      is_deleted: false,
+      reactions: [],
+    };
+    
+    const { addMessage } = useChatStore.getState();
+    addMessage(otherUserId, optimisticMsg);
+    
+    const sent = wsClient.sendMessage(otherUserId, content);
     if (sent) setInput('');
   };
 
