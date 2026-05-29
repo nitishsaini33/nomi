@@ -83,8 +83,13 @@ export default function ChatWindow({
 
     // Case 2: Initial open — always jump to bottom (once per chat switch)
     if (!hasScrolledToBottomRef.current) {
-      scrollToBottom('instant');
-      hasScrolledToBottomRef.current = true;
+      if (scrollRef.current) {
+        // Container is mounted — scroll and mark as done
+        scrollToBottom('instant');
+        hasScrolledToBottomRef.current = true;
+      }
+      // If container isn't mounted yet (loading screen showing), do NOT mark as done.
+      // The otherUser useEffect below will fire the scroll once the real UI mounts.
       return;
     }
 
