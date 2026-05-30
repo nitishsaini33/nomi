@@ -174,6 +174,7 @@ export default function ChatWindow({
 
   const scrollRef = useRef<HTMLDivElement>(null);
   const bottomRef = useRef<HTMLDivElement>(null);
+  const inputRef = useRef<HTMLInputElement>(null);
   const typingTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const lastScrollHeightRef = useRef<number>(0);
   const isRestoringScrollRef = useRef(false);
@@ -297,7 +298,12 @@ export default function ChatWindow({
     const { addMessage } = useChatStore.getState();
     addMessage(otherUserId, optimisticMsg);
     const sent = wsClient.sendMessage(otherUserId, content);
-    if (sent) setInput('');
+    if (sent) {
+      setInput('');
+      setTimeout(() => {
+        inputRef.current?.focus();
+      }, 0);
+    }
   };
 
   const deleteMessage = useCallback(async (msgId: string) => {
@@ -469,6 +475,7 @@ export default function ChatWindow({
           className="flex gap-2 sm:gap-3 bg-black/40 backdrop-blur-xl border border-white/10 rounded-2xl p-1.5 shadow-[0_8px_32px_rgba(0,0,0,0.3)]"
         >
           <input
+            ref={inputRef}
             type="text"
             value={input}
             onChange={handleInputChange}
