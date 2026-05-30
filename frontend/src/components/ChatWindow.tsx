@@ -3,7 +3,7 @@ import { useState, useEffect, useRef, useCallback, useMemo, memo } from 'react';
 import { api } from '@/lib/api';
 import { useChatStore, nextOptimisticId } from '@/store/chatStore';
 import { wsClient } from '@/lib/wsClient';
-import { Send, ArrowLeft, MoreVertical, Smile } from 'lucide-react';
+import { Send, ArrowLeft, UserMinus, Smile } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { motion, AnimatePresence } from 'framer-motion';
 
@@ -389,7 +389,7 @@ export default function ChatWindow({
           className="p-2 rounded-xl bg-red-500/10 hover:bg-red-500/20 text-red-400 border border-red-500/20 transition-all flex-shrink-0"
           title="Unfriend User"
         >
-          <MoreVertical size={18} />
+          <UserMinus size={18} />
         </button>
       </div>
 
