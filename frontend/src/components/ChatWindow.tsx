@@ -405,7 +405,7 @@ export default function ChatWindow({
       <div
         ref={scrollRef}
         onScroll={handleScroll}
-        className="flex-1 overflow-y-auto p-4 sm:p-6 no-scrollbar relative z-0"
+        className="flex-1 overflow-y-auto p-4 sm:p-6 no-scrollbar relative z-0 touch-pan-y"
       >
         {isLoadingMore && (
           <div className="flex justify-center py-2">

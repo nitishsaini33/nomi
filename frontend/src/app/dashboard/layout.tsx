@@ -1,5 +1,5 @@
 'use client'
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { useAuth } from '@/hooks/useAuth';
 import { useRouter, usePathname } from 'next/navigation';
 import Sidebar from '@/components/Sidebar';
@@ -13,6 +13,29 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
 
   // On mobile: sidebar and chat panel toggle by route
   const isInChat = pathname?.startsWith('/dashboard/chat/') ?? false;
+
+  // Track visual viewport for perfect WhatsApp-style mobile keyboard behavior
+  const [viewportHeight, setViewportHeight] = useState<string | number>('100dvh');
+
+  useEffect(() => {
+    if (typeof window === 'undefined' || !window.visualViewport) return;
+    
+    const handleResize = () => {
+      if (window.visualViewport) {
+        setViewportHeight(window.visualViewport.height);
+        window.scrollTo(0, 0); // Force scroll to top to counteract iOS Safari page shifting
+      }
+    };
+    
+    window.visualViewport.addEventListener('resize', handleResize);
+    window.visualViewport.addEventListener('scroll', handleResize);
+    handleResize();
+    
+    return () => {
+      window.visualViewport?.removeEventListener('resize', handleResize);
+      window.visualViewport?.removeEventListener('scroll', handleResize);
+    };
+  }, []);
 
   // Redirect if not authenticated
   useEffect(() => {
@@ -131,7 +154,10 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   if (!user) return null;
 
   return (
-    <div className="h-dvh flex overflow-hidden md:p-4 md:gap-4 relative text-white">
+    <div 
+      style={{ height: viewportHeight }}
+      className="flex w-full overflow-hidden md:p-4 md:gap-4 relative text-white"
+    >
       {/* Sidebar panel */}
       <div
         className={[
