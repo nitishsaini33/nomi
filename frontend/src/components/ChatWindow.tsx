@@ -46,109 +46,109 @@ const MessageBubble = memo(function MessageBubble({
   reactToMessage: (msgId: string, emoji: string) => void;
 }) {
   return (
-    <motion.div 
-      initial={{ opacity: 0, y: 10, scale: 0.95 }}
-      animate={{ opacity: 1, y: 0, scale: 1 }}
-      transition={{ type: "spring", stiffness: 400, damping: 25 }}
-      className={`flex ${isMe ? 'justify-end' : 'justify-start'} group mb-4 relative`}
-    >
-      <div
-        className={[
-          'max-w-[85%] sm:max-w-[75%] px-3 pt-2 pb-1.5 relative min-w-[70px]',
-          'shadow-sm',
-          isMe 
-            ? 'msg-bubble-me rounded-2xl rounded-tr-[4px]' 
-            : 'msg-bubble-other rounded-2xl rounded-tl-[4px]',
-          msg.is_deleted ? 'opacity-50 italic' : ''
-        ].join(' ')}
+      <motion.div 
+        initial={{ opacity: 0, y: 10, scale: 0.95 }}
+        animate={{ opacity: 1, y: 0, scale: 1 }}
+        transition={{ type: "spring", stiffness: 400, damping: 25 }}
+        className={`flex ${isMe ? 'justify-end' : 'justify-start'} group mb-6 relative`}
       >
-        {/* Action buttons (visible on hover) */}
-        <div className={`absolute -top-3 ${isMe ? '-left-8' : '-right-8'} hidden group-hover:flex gap-1 z-10`}>
-          {!msg.is_deleted && msg.id && (
-            <div className="relative">
-              <button 
-                className="w-7 h-7 rounded-full bg-white/10 backdrop-blur-md border border-white/20 text-white flex items-center justify-center hover:bg-white/20 transition-all shadow-lg" 
-                title="React"
-                onClick={() => setOpenReactionMsgId(openReactionMsgId === msg.id ? null : msg.id)}
+        <div
+          className={[
+            'max-w-[85%] sm:max-w-[75%] px-3 pt-2 pb-1.5 relative min-w-[70px]',
+            'shadow-sm',
+            isMe 
+              ? 'msg-bubble-me rounded-2xl rounded-tr-[4px]' 
+              : 'msg-bubble-other rounded-2xl rounded-tl-[4px]',
+            msg.is_deleted ? 'opacity-50 italic' : ''
+          ].join(' ')}
+        >
+          {/* Action buttons (visible on hover) */}
+          <div className={`absolute -top-3 ${isMe ? '-left-8' : '-right-8'} hidden group-hover:flex gap-1 z-10`}>
+            {!msg.is_deleted && msg.id && (
+              <div className="relative">
+                <button 
+                  className="w-7 h-7 rounded-full bg-white/10 backdrop-blur-md border border-white/20 text-white flex items-center justify-center hover:bg-white/20 transition-all shadow-lg" 
+                  title="React"
+                  onClick={() => setOpenReactionMsgId(openReactionMsgId === msg.id ? null : msg.id)}
+                >
+                  <Smile size={14} />
+                </button>
+                <AnimatePresence>
+                  {openReactionMsgId === msg.id && (
+                    <motion.div 
+                      initial={{ opacity: 0, scale: 0.8 }}
+                      animate={{ opacity: 1, scale: 1 }}
+                      exit={{ opacity: 0, scale: 0.8 }}
+                      className={`absolute bottom-full mb-2 ${isMe ? 'right-0' : 'left-0'} flex bg-black/40 backdrop-blur-xl border border-white/10 rounded-full p-1.5 gap-1 shadow-xl z-20`}
+                    >
+                      {['👍', '❤️', '😂', '😮', '😢'].map(emoji => (
+                        <button 
+                          key={emoji} 
+                          onClick={() => reactToMessage(msg.id, emoji)} 
+                          className="w-8 h-8 flex items-center justify-center hover:bg-white/20 rounded-full transition-all text-lg hover:scale-125"
+                        >
+                          {emoji}
+                        </button>
+                      ))}
+                    </motion.div>
+                  )}
+                </AnimatePresence>
+              </div>
+            )}
+            
+            {canDelete && (
+              <button
+                onClick={() => deleteMessage(msg.id)}
+                className="w-7 h-7 rounded-full bg-red-500/20 backdrop-blur-md border border-red-500/30 text-red-200 flex items-center justify-center hover:bg-red-500/40 transition-all shadow-lg text-xs font-bold"
+                title="Delete Message"
               >
-                <Smile size={14} />
+                ×
               </button>
-              <AnimatePresence>
-                {openReactionMsgId === msg.id && (
-                  <motion.div 
-                    initial={{ opacity: 0, scale: 0.8 }}
-                    animate={{ opacity: 1, scale: 1 }}
-                    exit={{ opacity: 0, scale: 0.8 }}
-                    className={`absolute bottom-full mb-2 ${isMe ? 'right-0' : 'left-0'} flex bg-black/40 backdrop-blur-xl border border-white/10 rounded-full p-1.5 gap-1 shadow-xl z-20`}
-                  >
-                    {['👍', '❤️', '😂', '😮', '😢'].map(emoji => (
-                      <button 
-                        key={emoji} 
-                        onClick={() => reactToMessage(msg.id, emoji)} 
-                        className="w-8 h-8 flex items-center justify-center hover:bg-white/20 rounded-full transition-all text-lg hover:scale-125"
-                      >
-                        {emoji}
-                      </button>
-                    ))}
-                  </motion.div>
-                )}
-              </AnimatePresence>
+            )}
+          </div>
+
+          <div className="relative">
+            <div className="text-[15px] leading-snug whitespace-pre-wrap break-words">
+              {msg.content}
+              {/* Spacer for time to ensure it never overlaps text */}
+              <span className={`inline-block h-1 ${
+                msg.is_edited && !msg.is_deleted 
+                  ? (isMe ? 'w-[6.5rem]' : 'w-[5.5rem]') 
+                  : (isMe ? 'w-[4.5rem]' : 'w-[3.5rem]')
+              }`} />
+            </div>
+
+            <div className={`absolute bottom-[-2px] right-0 flex items-center gap-1 text-[10px] ${isMe ? 'text-white/80' : 'text-white/50'}`}>
+              {msg.is_edited && !msg.is_deleted && (
+                <span className="text-[9px] font-medium mr-0.5">(edited)</span>
+              )}
+              <span className="leading-none">{formatTime(msg.timestamp)}</span>
+              {isMe && (
+                <span className="flex items-center ml-0.5 leading-none">
+                  {msg.status === 'READ' ? <span className="text-cyan-300">✓✓</span> : 
+                   msg.status === 'DELIVERED' ? <span>✓✓</span> : 
+                   <span className="opacity-60">✓</span>}
+                </span>
+              )}
+            </div>
+          </div>
+          
+          {/* Display Reactions */}
+          {!msg.is_deleted && msg.reactions && msg.reactions.length > 0 && (
+            <div className={`absolute -bottom-4 ${isMe ? 'right-1' : 'right-1'} flex items-center gap-0.5 z-10 bg-[#0f172a] border border-white/10 px-2 py-1 rounded-full shadow-lg`}>
+              {msg.reactions.map((r: any) => (
+                <span 
+                  key={r.id} 
+                  className="text-[15px] leading-none" 
+                  title={r.user_id === currentUserId ? 'You' : otherUsername}
+                >
+                  {r.emoji}
+                </span>
+              ))}
             </div>
           )}
-          
-          {canDelete && (
-            <button
-              onClick={() => deleteMessage(msg.id)}
-              className="w-7 h-7 rounded-full bg-red-500/20 backdrop-blur-md border border-red-500/30 text-red-200 flex items-center justify-center hover:bg-red-500/40 transition-all shadow-lg text-xs font-bold"
-              title="Delete Message"
-            >
-              ×
-            </button>
-          )}
         </div>
-
-        <div className="relative">
-          <div className="text-[15px] leading-snug whitespace-pre-wrap break-words">
-            {msg.content}
-            {/* Spacer for time to ensure it never overlaps text */}
-            <span className={`inline-block h-1 ${
-              msg.is_edited && !msg.is_deleted 
-                ? (isMe ? 'w-[6.5rem]' : 'w-[5.5rem]') 
-                : (isMe ? 'w-[4.5rem]' : 'w-[3.5rem]')
-            }`} />
-          </div>
-
-          <div className={`absolute bottom-[-2px] right-0 flex items-center gap-1 text-[10px] ${isMe ? 'text-white/80' : 'text-white/50'}`}>
-            {msg.is_edited && !msg.is_deleted && (
-              <span className="text-[9px] font-medium mr-0.5">(edited)</span>
-            )}
-            <span className="leading-none">{formatTime(msg.timestamp)}</span>
-            {isMe && (
-              <span className="flex items-center ml-0.5 leading-none">
-                {msg.status === 'READ' ? <span className="text-cyan-300">✓✓</span> : 
-                 msg.status === 'DELIVERED' ? <span>✓✓</span> : 
-                 <span className="opacity-60">✓</span>}
-              </span>
-            )}
-          </div>
-        </div>
-        
-        {/* Display Reactions */}
-        {!msg.is_deleted && msg.reactions && msg.reactions.length > 0 && (
-          <div className={`absolute -bottom-3.5 ${isMe ? 'right-2' : 'right-2'} flex items-center gap-0.5 z-10 bg-[#0f172a] border border-white/10 px-1.5 py-0.5 rounded-full shadow-lg`}>
-            {msg.reactions.map((r: any) => (
-              <span 
-                key={r.id} 
-                className="text-[14px] leading-none" 
-                title={r.user_id === currentUserId ? 'You' : otherUsername}
-              >
-                {r.emoji}
-              </span>
-            ))}
-          </div>
-        )}
-      </div>
-    </motion.div>
+      </motion.div>
   );
 });
 
