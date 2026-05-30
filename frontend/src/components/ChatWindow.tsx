@@ -110,8 +110,8 @@ const MessageBubble = memo(function MessageBubble({
         <div className="relative">
           <div className="text-[15px] leading-snug whitespace-pre-wrap break-words">
             {msg.content}
-            {/* Spacer for time */}
-            <span className="inline-block w-[3.5rem] h-1" />
+            {/* Spacer for time to ensure it never overlaps text */}
+            <span className={`inline-block h-1 ${msg.is_edited && !msg.is_deleted ? 'w-[6.5rem]' : 'w-[4.5rem]'}`} />
           </div>
 
           <div className={`absolute bottom-[-2px] right-0 flex items-center gap-1 text-[10px] ${isMe ? 'text-white/80' : 'text-white/50'}`}>
