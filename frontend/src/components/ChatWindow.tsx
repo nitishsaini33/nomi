@@ -279,7 +279,7 @@ export default function ChatWindow({
   };
 
   const sendMessage = (e: React.FormEvent) => {
-    e.preventDefault();
+    if (e && e.preventDefault) e.preventDefault();
     if (!input.trim()) return;
     wsClient.sendTyping(otherUserId, false);
     if (typingTimeoutRef.current) clearTimeout(typingTimeoutRef.current);
@@ -299,6 +299,7 @@ export default function ChatWindow({
     addMessage(otherUserId, optimisticMsg);
     const sent = wsClient.sendMessage(otherUserId, content);
     if (sent) {
+      inputRef.current?.focus();
       setInput('');
     }
   };
@@ -493,18 +494,10 @@ export default function ChatWindow({
 
           {/* Send Button */}
           <button
-            type="button"
+            type="submit"
             disabled={!input.trim()}
             onMouseDown={(e) => {
               e.preventDefault(); // Prevents focus loss on desktop
-            }}
-            onClick={(e) => {
-              e.preventDefault();
-              sendMessage(e as any);
-            }}
-            onTouchStart={(e) => {
-              e.preventDefault(); // Prevents focus loss on mobile
-              sendMessage(e as any);
             }}
             className={`w-12 h-12 rounded-full flex items-center justify-center flex-shrink-0 shadow-lg transition-all ${
               input.trim() 
