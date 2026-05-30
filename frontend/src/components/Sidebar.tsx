@@ -3,7 +3,9 @@ import { useState, useEffect, useMemo } from 'react';
 import { api } from '@/lib/api';
 import { UserPlus, Search, LogOut, Trash2 } from 'lucide-react';
 import RequestModal from './RequestModal';
-import { useRouter } from 'next/navigation';
+import { useRouter, usePathname } from 'next/navigation';
+import { useChatStore } from '@/store/chatStore';
+import { motion, AnimatePresence } from 'framer-motion';
 import { useChatStore } from '@/store/chatStore';
 
 /** Returns a compact relative time string */
@@ -24,7 +26,10 @@ export default function Sidebar({ user }: { user: any }) {
   const [searchResults, setSearchResults] = useState<any[]>([]);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [pendingRequestCount, setPendingRequestCount] = useState(0);
+  const [isSearchFocused, setIsSearchFocused] = useState(false);
   const router = useRouter();
+  const pathname = usePathname();
+  const activeChatId = pathname?.split('/').pop();
 
   const { 
     unreadCounts, 
@@ -136,51 +141,69 @@ export default function Sidebar({ user }: { user: any }) {
           {user.username}
         </button>
         <div className="flex gap-2">
-          <button
+          <motion.button
+            whileHover={{ scale: 1.05 }}
+            whileTap={{ scale: 0.95 }}
             onClick={() => {
               setIsModalOpen(true);
               setPendingRequestCount(0);
             }}
             title="Friend Requests"
-            className="relative p-2 rounded-xl bg-white/5 hover:bg-white/10 border border-white/10 hover:border-indigo-500/50 hover:text-indigo-400 transition-all"
+            className="relative p-2 rounded-xl bg-white/5 hover:bg-white/10 border border-white/10 hover:border-indigo-500/50 hover:text-indigo-400 transition-colors"
           >
             <UserPlus size={18} />
             {pendingRequestCount > 0 && (
-              <span className="absolute -top-1 -right-1 min-w-[18px] h-[18px] bg-indigo-500 rounded-full font-bold text-[10px] flex items-center justify-center border border-indigo-400 shadow-[0_0_10px_rgba(99,102,241,0.5)]">
+              <motion.span 
+                initial={{ scale: 0 }}
+                animate={{ scale: 1 }}
+                className="absolute -top-1 -right-1 min-w-[18px] h-[18px] bg-indigo-500 rounded-full font-bold text-[10px] flex items-center justify-center border border-indigo-400 shadow-[0_0_10px_rgba(99,102,241,0.5)]"
+              >
                 {pendingRequestCount > 9 ? '9+' : pendingRequestCount}
-              </span>
+              </motion.span>
             )}
-          </button>
-          <button
+          </motion.button>
+          <motion.button
+            whileHover={{ scale: 1.05 }}
+            whileTap={{ scale: 0.95 }}
             onClick={handleDeleteAccount}
             title="Delete Account"
-            className="p-2 rounded-xl bg-white/5 hover:bg-red-500/20 border border-white/10 hover:border-red-500/50 hover:text-red-400 transition-all"
+            className="p-2 rounded-xl bg-white/5 hover:bg-red-500/20 border border-white/10 hover:border-red-500/50 hover:text-red-400 transition-colors"
           >
             <Trash2 size={18} />
-          </button>
-          <button
+          </motion.button>
+          <motion.button
+            whileHover={{ scale: 1.05 }}
+            whileTap={{ scale: 0.95 }}
             onClick={handleLogout}
             title="Logout"
-            className="p-2 rounded-xl bg-white/5 hover:bg-white/10 border border-white/10 hover:border-white/20 transition-all"
+            className="p-2 rounded-xl bg-white/5 hover:bg-white/10 border border-white/10 hover:border-white/20 transition-colors"
           >
             <LogOut size={18} />
-          </button>
+          </motion.button>
         </div>
       </div>
 
-      {/* ── Search ── */}
       <div className="flex-shrink-0 px-4 sm:px-6 py-4">
         <form onSubmit={handleSearch} className="relative">
-          <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-            <Search size={16} className="text-gray-400" />
-          </div>
-          <input
-            type="text"
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            placeholder="Search users..."
-            className="glass-input !pl-10 text-sm py-2.5 rounded-full"
-          />
+          <motion.div 
+            animate={{ 
+              boxShadow: isSearchFocused ? '0 0 0 2px rgba(99,102,241,0.4)' : '0 0 0 0px rgba(99,102,241,0)'
+            }}
+            className="relative rounded-full"
+          >
+            <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+              <Search size={16} className={`transition-colors ${isSearchFocused ? 'text-indigo-400' : 'text-gray-400'}`} />
+            </div>
+            <input
+              type="text"
+              value={search}
+              onFocus={() => setIsSearchFocused(true)}
+              onBlur={() => setIsSearchFocused(false)}
+              onChange={(e) => setSearch(e.target.value)}
+              placeholder="Search users..."
+              className="glass-input !pl-10 text-sm py-2.5 rounded-full transition-all"
+            />
+          </motion.div>
         </form>
       </div>
 
@@ -218,16 +241,34 @@ export default function Sidebar({ user }: { user: any }) {
           <h3 className="text-xs font-semibold text-gray-400 uppercase tracking-wider">Messages</h3>
         </div>
 
-        <div className="space-y-1">
+        <motion.div 
+          initial="hidden"
+          animate="visible"
+          variants={{
+            visible: { transition: { staggerChildren: 0.05 } }
+          }}
+          className="space-y-1"
+        >
           {sortedFriends.map((f: any) => {
             const unread   = unreadCounts[f.id] || 0;
             const lastTime = lastMessageTimes[f.id] || 0;
+            const isActive = activeChatId === f.id;
 
             return (
-              <button
+              <motion.button
+                variants={{
+                  hidden: { opacity: 0, x: -20 },
+                  visible: { opacity: 1, x: 0 }
+                }}
+                whileHover={{ scale: 1.015, x: 4 }}
+                whileTap={{ scale: 0.98 }}
                 key={f.id}
                 onClick={() => router.push(`/dashboard/chat/${f.id}`)}
-                className="w-full text-left p-3 mx-2 rounded-xl hover:bg-white/10 transition-all group relative flex items-center gap-3 border border-transparent hover:border-white/5"
+                className={`w-full text-left p-3 mx-2 rounded-xl transition-all group relative flex items-center gap-3 border ${
+                  isActive 
+                    ? 'bg-white/10 border-white/20 shadow-[0_4px_20px_rgba(0,0,0,0.2)]' 
+                    : 'bg-transparent border-transparent hover:bg-white/5 hover:border-white/5'
+                }`}
                 style={{ width: 'calc(100% - 16px)' }}
               >
                 {/* Avatar with online indicator */}
@@ -236,24 +277,29 @@ export default function Sidebar({ user }: { user: any }) {
                     {f.username.charAt(0).toUpperCase()}
                   </div>
                   {onlineUsers[f.id] && (
-                    <div className="absolute bottom-0 right-0 w-3 h-3 bg-cyan-400 rounded-full border-2 border-[#0B0F19] shadow-[0_0_8px_rgba(6,182,212,0.6)]" />
+                    <motion.div 
+                      initial={{ scale: 0 }}
+                      animate={{ scale: 1 }}
+                      transition={{ type: "spring", stiffness: 500, damping: 20 }}
+                      className="absolute bottom-0 right-0 w-3 h-3 bg-cyan-400 rounded-full border-2 border-[#0B0F19] shadow-[0_0_8px_rgba(6,182,212,0.6)]" 
+                    />
                   )}
                 </div>
 
                 {/* Content */}
                 <div className="flex-1 min-w-0">
                   <div className="flex justify-between items-baseline mb-0.5">
-                    <span className="font-semibold text-sm truncate text-white group-hover:text-indigo-200 transition-colors">
+                    <span className={`font-semibold text-sm truncate transition-colors ${isActive ? 'text-indigo-300' : 'text-white group-hover:text-indigo-200'}`}>
                       {f.username}
                     </span>
                     {lastTime > 0 && (
-                      <span className="text-[10px] font-medium text-gray-500 tabular-nums whitespace-nowrap ml-2">
+                      <span className={`text-[10px] font-medium tabular-nums whitespace-nowrap ml-2 ${isActive ? 'text-indigo-300' : 'text-gray-500'}`}>
                         {timeAgo(lastTime)}
                       </span>
                     )}
                   </div>
                   <div className="flex justify-between items-center h-4">
-                    <p className="text-xs text-gray-400 truncate pr-2">
+                    <p className={`text-xs truncate pr-2 transition-colors ${isActive ? 'text-indigo-100/70' : 'text-gray-400'}`}>
                       {unread > 0 ? (
                         <span className="text-indigo-400 font-medium">New messages</span>
                       ) : (
@@ -261,26 +307,34 @@ export default function Sidebar({ user }: { user: any }) {
                       )}
                     </p>
                     {unread > 0 && (
-                      <span className="min-w-[18px] h-[18px] px-1 rounded-full bg-indigo-500 text-white font-bold text-[10px] flex items-center justify-center shadow-[0_0_10px_rgba(99,102,241,0.5)] flex-shrink-0">
+                      <motion.span 
+                        initial={{ scale: 0 }}
+                        animate={{ scale: 1 }}
+                        className="min-w-[18px] h-[18px] px-1 rounded-full bg-indigo-500 text-white font-bold text-[10px] flex items-center justify-center shadow-[0_0_10px_rgba(99,102,241,0.5)] flex-shrink-0"
+                      >
                         {unread > 9 ? '9+' : unread}
-                      </span>
+                      </motion.span>
                     )}
                   </div>
                 </div>
-              </button>
+              </motion.button>
             );
           })}
 
           {friends.length === 0 && (
-            <div className="flex flex-col items-center justify-center py-10 px-4 text-center">
+            <motion.div 
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              className="flex flex-col items-center justify-center py-10 px-4 text-center"
+            >
               <div className="w-12 h-12 rounded-full bg-white/5 flex items-center justify-center mb-3 text-gray-500">
                 <Search size={20} />
               </div>
               <p className="text-sm font-medium text-gray-300">No friends yet</p>
               <p className="text-xs text-gray-500 mt-1">Search above to connect</p>
-            </div>
+            </motion.div>
           )}
-        </div>
+        </motion.div>
       </div>
 
       {isModalOpen && (
