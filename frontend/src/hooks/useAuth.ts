@@ -12,16 +12,28 @@ export function useAuth() {
     const initAuth = async () => {
       const token = localStorage.getItem('token');
       if (!token) {
+        setCurrentUser(null);
         setLoading(false);
         return;
       }
+
+      // If we already have the user from Zustand persist, we can stop loading early
+      // to prevent the UI from blocking/flashing while checking the token.
+      const hasUser = !!useChatStore.getState().currentUser;
+      if (hasUser) {
+        setLoading(false);
+      }
+
       try {
         const user = await api.get('/users/me');
         setCurrentUser(user);
-      } catch (err) {
+      } catch (err: any) {
         console.error('Auth check failed:', err);
-        localStorage.removeItem('token');
-        setCurrentUser(null);
+        // Only wipe the token if the backend explicitly rejected it (expired/invalid)
+        if (err?.status === 401 || err?.status === 403) {
+          localStorage.removeItem('token');
+          setCurrentUser(null);
+        }
       } finally {
         setLoading(false);
       }

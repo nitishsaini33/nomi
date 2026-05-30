@@ -280,6 +280,7 @@ export const useChatStore = create<ChatStore>()(
         lastMessageTimes: state.lastMessageTimes,
         unreadCounts: state.unreadCounts,
         friends: state.friends,
+        currentUser: state.currentUser,
       }),
     }
   )
