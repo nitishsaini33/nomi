@@ -330,11 +330,17 @@ export default function ChatWindow({
   const reactToMessage = useCallback(async (msgId: string, emoji: string) => {
     setOpenReactionMsgId(null);
     try {
+      const msg = messages[otherUserId]?.find((m: any) => m.id === msgId);
+      const existingReaction = msg?.reactions?.find((r: any) => r.user_id === currentUser.id);
+      
+      const isTogglingOff = existingReaction && existingReaction.emoji === emoji;
+      const optimisticEmoji = isTogglingOff ? "" : emoji;
+
       addReaction(otherUserId, msgId, {
-        id: 'temp-' + Date.now(),
+        id: existingReaction?.id || ('temp-' + Date.now()),
         message_id: msgId,
         user_id: currentUser.id,
-        emoji,
+        emoji: optimisticEmoji,
         timestamp: new Date().toISOString()
       });
       const data = await api.post(`/chat/message/${msgId}/react`, { emoji });
@@ -342,7 +348,7 @@ export default function ChatWindow({
     } catch (e) {
       console.error('Failed to react', e);
     }
-  }, [otherUserId, currentUser.id, addReaction]);
+  }, [otherUserId, currentUser.id, addReaction, messages]);
 
   const handleUnfriend = useCallback(async () => {
     if (!otherUser) return;

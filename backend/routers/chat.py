@@ -154,17 +154,38 @@ async def react_to_message(
     existing_reaction = result.scalars().first()
     
     if existing_reaction:
-        existing_reaction.emoji = reaction_in.emoji
-        db.add(existing_reaction)
-        reaction_obj = existing_reaction
+        if existing_reaction.emoji == reaction_in.emoji:
+            # Toggle off: user clicked the same emoji they already reacted with
+            reaction_id = existing_reaction.id
+            await db.delete(existing_reaction)
+            await db.commit()
+            
+            # Broadcast the deletion
+            notify_id = msg.sender_id if msg.sender_id != current_user.id else msg.receiver_id
+            payload = {
+                "id": reaction_id,
+                "message_id": message_id,
+                "user_id": current_user.id,
+                "emoji": "", # Indicates deletion to the frontend store
+                "timestamp": datetime.utcnow().isoformat()
+            }
+            await manager.send_personal_message({"type": "message_reaction", "payload": payload}, notify_id)
+            
+            return payload
+            
+        else:
+            existing_reaction.emoji = reaction_in.emoji
+            db.add(existing_reaction)
+            reaction_obj = existing_reaction
+            await db.commit()
+            await db.refresh(reaction_obj)
     else:
         new_reaction = Reaction(message_id=message_id, user_id=current_user.id, emoji=reaction_in.emoji)
         db.add(new_reaction)
         reaction_obj = new_reaction
+        await db.commit()
+        await db.refresh(reaction_obj)
         
-    await db.commit()
-    await db.refresh(reaction_obj)
-    
     # Determine who to broadcast to
     notify_id = msg.sender_id if msg.sender_id != current_user.id else msg.receiver_id
     

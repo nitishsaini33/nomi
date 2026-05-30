@@ -241,13 +241,19 @@ export const useChatStore = create<ChatStore>()(
                 if (m.id === messageId) {
                   const reactions = m.reactions || [];
                   const index = reactions.findIndex((r: any) => r.user_id === reaction.user_id);
-                  let newReactions;
-                  if (index >= 0) {
-                    newReactions = [...reactions];
-                    newReactions[index] = reaction; // Update existing
+                  let newReactions = [...reactions];
+                  
+                  if (reaction.emoji === "") {
+                    // Remove reaction
+                    if (index >= 0) newReactions.splice(index, 1);
                   } else {
-                    newReactions = [...reactions, reaction]; // Add new
+                    if (index >= 0) {
+                      newReactions[index] = reaction; // Update existing
+                    } else {
+                      newReactions.push(reaction); // Add new
+                    }
                   }
+                  
                   return { ...m, reactions: newReactions };
                 }
                 return m;
