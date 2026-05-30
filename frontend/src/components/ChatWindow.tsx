@@ -3,7 +3,7 @@ import { useState, useEffect, useRef, useCallback, useMemo, memo } from 'react';
 import { api } from '@/lib/api';
 import { useChatStore, nextOptimisticId } from '@/store/chatStore';
 import { wsClient } from '@/lib/wsClient';
-import { Send, ArrowLeft, UserMinus, Smile } from 'lucide-react';
+import { Send, ArrowLeft, UserMinus, Smile, Video, Phone, Paperclip, Camera, Mic } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { motion, AnimatePresence } from 'framer-motion';
 
@@ -359,44 +359,54 @@ export default function ChatWindow({
   return (
     <div className="flex flex-col h-full bg-transparent text-white relative">
       {/* ── Header ── */}
-      <div className="flex-shrink-0 flex items-center gap-3 px-4 sm:px-6 py-4 border-b border-white/5 bg-white/5 backdrop-blur-md z-10 shadow-sm">
-        <button
-          onClick={() => router.push('/dashboard')}
-          className="md:hidden p-2 rounded-xl bg-white/5 hover:bg-white/10 transition-colors flex-shrink-0 border border-white/10"
-        >
-          <ArrowLeft size={18} />
-        </button>
-        
-        {/* Avatar */}
-        <div className="relative flex-shrink-0">
-          <div className="w-10 h-10 rounded-full bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center font-bold text-white shadow-lg">
-            {otherUser.username.charAt(0).toUpperCase()}
-          </div>
-          {onlineUsers[otherUserId] && (
-            <div className="absolute bottom-0 right-0 w-3 h-3 bg-cyan-400 rounded-full border-2 border-[#0B0F19] shadow-[0_0_8px_rgba(6,182,212,0.6)]" />
-          )}
-        </div>
-
-        <div className="flex flex-col flex-1 min-w-0">
-          <div className="font-semibold text-base sm:text-lg text-white truncate">
-            {otherUser.username}
-          </div>
-          <div className="text-xs text-gray-400">
-            {onlineUsers[otherUserId] ? (
-              <span className="text-cyan-400 font-medium">Online</span>
-            ) : (
-              <span>Offline</span>
+      <div className="flex-shrink-0 flex items-center px-2 sm:px-4 py-2 sm:py-3 border-b border-white/5 bg-white/5 backdrop-blur-md z-10 shadow-sm">
+        <div className="flex items-center flex-1 min-w-0 gap-2 cursor-pointer">
+          <button
+            onClick={() => router.push('/dashboard')}
+            className="md:hidden p-2 rounded-full hover:bg-white/10 transition-colors flex-shrink-0"
+          >
+            <ArrowLeft size={22} />
+          </button>
+          
+          {/* Avatar */}
+          <div className="relative flex-shrink-0">
+            <div className="w-10 h-10 rounded-full bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center font-bold text-white shadow-lg">
+              {otherUser.username.charAt(0).toUpperCase()}
+            </div>
+            {onlineUsers[otherUserId] && (
+              <div className="absolute bottom-0 right-0 w-3 h-3 bg-emerald-400 rounded-full border-2 border-[#0B0F19]" />
             )}
           </div>
+
+          <div className="flex flex-col flex-1 min-w-0 ml-1">
+            <div className="font-semibold text-base text-white truncate">
+              {otherUser.username}
+            </div>
+            <div className="text-xs text-gray-400">
+              {onlineUsers[otherUserId] ? (
+                <span className="text-emerald-400 font-medium">Online</span>
+              ) : (
+                <span>Offline</span>
+              )}
+            </div>
+          </div>
         </div>
         
-        <button
-          onClick={handleUnfriend}
-          className="p-2 rounded-xl bg-red-500/10 hover:bg-red-500/20 text-red-400 border border-red-500/20 transition-all flex-shrink-0"
-          title="Unfriend User"
-        >
-          <UserMinus size={18} />
-        </button>
+        <div className="flex items-center gap-1 sm:gap-2 flex-shrink-0 text-gray-300">
+          <button className="p-2 rounded-full hover:bg-white/10 transition-all">
+            <Video size={22} />
+          </button>
+          <button className="p-2 rounded-full hover:bg-white/10 transition-all">
+            <Phone size={20} />
+          </button>
+          <button
+            onClick={handleUnfriend}
+            className="p-2 rounded-full hover:bg-red-500/20 text-gray-300 hover:text-red-400 transition-all"
+            title="Unfriend User"
+          >
+            <UserMinus size={22} />
+          </button>
+        </div>
       </div>
 
       {/* ── Messages ── */}
@@ -469,27 +479,49 @@ export default function ChatWindow({
       </div>
 
       {/* ── Input Area ── */}
-      <div className="flex-shrink-0 p-4 sm:p-6 bg-gradient-to-t from-[#0B0F19] to-transparent z-10">
+      <div className="flex-shrink-0 px-2 py-2 sm:px-4 sm:py-4 bg-gradient-to-t from-[#0B0F19] to-transparent z-10">
         <form
           onSubmit={sendMessage}
-          className="flex gap-2 sm:gap-3 bg-black/40 backdrop-blur-xl border border-white/10 rounded-2xl p-1.5 shadow-[0_8px_32px_rgba(0,0,0,0.3)]"
+          className="flex items-end gap-2"
         >
-          <input
-            ref={inputRef}
-            type="text"
-            value={input}
-            onChange={handleInputChange}
-            placeholder="Type a message..."
-            className="flex-1 bg-transparent text-white px-4 py-2 text-sm sm:text-base outline-none placeholder-gray-500"
-            autoComplete="off"
-          />
+          {/* Input Pill */}
+          <div className="flex-1 flex items-center gap-1 sm:gap-2 bg-[#1E293B]/80 backdrop-blur-xl border border-white/10 rounded-[24px] px-2 sm:px-3 py-1 shadow-lg min-h-[48px]">
+            <button type="button" className="p-1.5 text-gray-400 hover:text-white transition-colors flex-shrink-0">
+              <Smile size={24} />
+            </button>
+            <input
+              ref={inputRef}
+              type="text"
+              value={input}
+              onChange={handleInputChange}
+              placeholder="Message"
+              className="flex-1 bg-transparent text-white px-1 py-2 text-[15px] sm:text-base outline-none placeholder-gray-400 w-full"
+              autoComplete="off"
+            />
+            <button type="button" className="p-1.5 text-gray-400 hover:text-white transition-colors flex-shrink-0 transform -rotate-45">
+              <Paperclip size={20} />
+            </button>
+            <button type="button" className="p-1.5 text-gray-400 hover:text-white transition-colors flex-shrink-0 hidden sm:block">
+              <Camera size={20} />
+            </button>
+          </div>
+
+          {/* Send Button */}
           <button
             type="submit"
             disabled={!input.trim()}
-            className="p-3 bg-indigo-500 hover:bg-indigo-400 disabled:bg-white/10 disabled:text-gray-500 text-white rounded-xl transition-all shadow-md flex-shrink-0"
+            className={`w-12 h-12 rounded-full flex items-center justify-center flex-shrink-0 shadow-lg transition-all ${
+              input.trim() 
+                ? 'bg-emerald-500 hover:bg-emerald-400 text-white shadow-emerald-500/25' 
+                : 'bg-[#1E293B]/80 backdrop-blur-xl text-gray-400 border border-white/10'
+            }`}
             aria-label="Send message"
           >
-            <Send size={18} />
+            {input.trim() ? (
+              <Send size={20} className="translate-x-0.5" />
+            ) : (
+              <Mic size={20} />
+            )}
           </button>
         </form>
       </div>
