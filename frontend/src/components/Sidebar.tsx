@@ -6,7 +6,6 @@ import RequestModal from './RequestModal';
 import { useRouter, usePathname } from 'next/navigation';
 import { useChatStore } from '@/store/chatStore';
 import { motion, AnimatePresence } from 'framer-motion';
-import { useChatStore } from '@/store/chatStore';
 
 /** Returns a compact relative time string */
 function timeAgo(epochMs: number): string {
