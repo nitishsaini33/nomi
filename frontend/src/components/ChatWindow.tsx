@@ -135,11 +135,11 @@ const MessageBubble = memo(function MessageBubble({
         
         {/* Display Reactions */}
         {!msg.is_deleted && msg.reactions && msg.reactions.length > 0 && (
-          <div className="flex flex-wrap gap-1 mt-1.5">
+          <div className={`absolute -bottom-3.5 ${isMe ? 'right-2' : 'right-2'} flex items-center gap-0.5 z-10 bg-[#0f172a] border border-white/10 px-1.5 py-0.5 rounded-full shadow-lg`}>
             {msg.reactions.map((r: any) => (
               <span 
                 key={r.id} 
-                className="text-[11px] bg-black/20 px-1.5 py-0.5 rounded-full border border-white/10 backdrop-blur-sm shadow-sm" 
+                className="text-[14px] leading-none" 
                 title={r.user_id === currentUserId ? 'You' : otherUsername}
               >
                 {r.emoji}
