@@ -6,6 +6,9 @@ import { wsClient } from '@/lib/wsClient';
 import { Send, ArrowLeft, UserMinus, Smile } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { motion, AnimatePresence } from 'framer-motion';
+import dynamic from 'next/dynamic';
+
+const EmojiPicker = dynamic(() => import('emoji-picker-react'), { ssr: false });
 
 const _timeCache = new Map<string, string>();
 function formatTime(timestamp: string): string {
@@ -166,6 +169,7 @@ export default function ChatWindow({
   const [isLoadingMore, setIsLoadingMore] = useState(false);
   const [hasMore, setHasMore] = useState(true);
   const [openReactionMsgId, setOpenReactionMsgId] = useState<string | null>(null);
+  const [showEmojiPicker, setShowEmojiPicker] = useState(false);
 
   const otherUser = useMemo(
     () => friends.find((f: any) => f.id === otherUserId) || null,
@@ -301,6 +305,7 @@ export default function ChatWindow({
     if (sent) {
       inputRef.current?.focus();
       setInput('');
+      setShowEmojiPicker(false);
     }
   };
 
@@ -471,14 +476,38 @@ export default function ChatWindow({
       </div>
 
       {/* ── Input Area ── */}
-      <div className="flex-shrink-0 px-2 py-2 sm:px-4 sm:py-4 bg-gradient-to-t from-[#0B0F19] to-transparent z-10">
+      <div className="flex-shrink-0 px-2 py-2 sm:px-4 sm:py-4 bg-gradient-to-t from-[#0B0F19] to-transparent z-10 relative">
+        {/* Emoji Picker Popup */}
+        <AnimatePresence>
+          {showEmojiPicker && (
+            <motion.div
+              initial={{ opacity: 0, y: 10, scale: 0.95 }}
+              animate={{ opacity: 1, y: 0, scale: 1 }}
+              exit={{ opacity: 0, y: 10, scale: 0.95 }}
+              className="absolute bottom-full left-2 sm:left-4 mb-2 z-50 shadow-2xl"
+            >
+              <EmojiPicker 
+                onEmojiClick={(emojiData: any) => setInput(prev => prev + emojiData.emoji)}
+                theme="dark" as any
+                previewConfig={{ showPreview: false }}
+                skinTonesDisabled
+                height={320}
+              />
+            </motion.div>
+          )}
+        </AnimatePresence>
+
         <form
           onSubmit={sendMessage}
           className="flex items-end gap-2"
         >
           {/* Input Pill */}
           <div className="flex-1 flex items-center gap-1 sm:gap-2 bg-[#1E293B]/80 backdrop-blur-xl border border-white/10 rounded-[24px] px-2 sm:px-3 py-1 shadow-lg min-h-[48px]">
-            <button type="button" className="p-1.5 text-gray-400 hover:text-white transition-colors flex-shrink-0">
+            <button 
+              type="button" 
+              onClick={() => setShowEmojiPicker(prev => !prev)}
+              className={`p-1.5 transition-colors flex-shrink-0 ${showEmojiPicker ? 'text-emerald-400' : 'text-gray-400 hover:text-white'}`}
+            >
               <Smile size={24} />
             </button>
             <input
@@ -486,6 +515,7 @@ export default function ChatWindow({
               type="text"
               value={input}
               onChange={handleInputChange}
+              onFocus={() => setShowEmojiPicker(false)}
               placeholder="Message"
               className="flex-1 bg-transparent text-white px-1 py-2 text-[15px] sm:text-base outline-none placeholder-gray-400 w-full"
               autoComplete="off"
