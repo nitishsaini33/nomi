@@ -144,6 +144,7 @@ export default function ChatWindow({
     addReaction,
     updateMessage,
     friends,
+    removeFriendData,
   } = useChatStore();
   
   const [input, setInput] = useState('');
@@ -341,11 +342,12 @@ export default function ChatWindow({
     if (!confirm(`Are you sure you want to unfriend ${otherUser.username}? This will delete all chat history for both of you.`)) return;
     try {
       await api.delete(`/users/friends/${otherUserId}`);
+      removeFriendData(otherUserId); // Wipe from local cache immediately
       router.push('/dashboard');
     } catch (e) {
       console.error('Failed to unfriend', e);
     }
-  }, [otherUserId, otherUser, router]);
+  }, [otherUserId, otherUser, router, removeFriendData]);
 
   // ── Render ───────────────────────────────────────────────────────────────
   if (!otherUser) {
