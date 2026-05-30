@@ -76,7 +76,7 @@ const MessageBubble = memo(function MessageBubble({
                     initial={{ opacity: 0, scale: 0.8 }}
                     animate={{ opacity: 1, scale: 1 }}
                     exit={{ opacity: 0, scale: 0.8 }}
-                    className={`absolute bottom-full mb-2 ${isMe ? 'left-0' : 'right-0'} flex bg-black/40 backdrop-blur-xl border border-white/10 rounded-full p-1.5 gap-1 shadow-xl z-20`}
+                    className={`absolute bottom-full mb-2 ${isMe ? 'right-0' : 'left-0'} flex bg-black/40 backdrop-blur-xl border border-white/10 rounded-full p-1.5 gap-1 shadow-xl z-20`}
                   >
                     {['👍', '❤️', '😂', '😮', '😢'].map(emoji => (
                       <button 
