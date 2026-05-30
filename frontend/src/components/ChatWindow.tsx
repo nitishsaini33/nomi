@@ -114,7 +114,7 @@ const MessageBubble = memo(function MessageBubble({
             <span className={`inline-block h-1 ${
               msg.is_edited && !msg.is_deleted 
                 ? (isMe ? 'w-[6.5rem]' : 'w-[5.5rem]') 
-                : (isMe ? 'w-[4.5rem]' : 'w-[3rem]')
+                : (isMe ? 'w-[4.5rem]' : 'w-[3.5rem]')
             }`} />
           </div>
 
