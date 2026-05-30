@@ -31,7 +31,7 @@ export function useAuth() {
 
   const logout = () => {
     localStorage.removeItem('token');
-    setCurrentUser(null);
+    useChatStore.getState().clearStore(); // Wipes cached messages, friends, etc.
     router.push('/login');
   };
 

@@ -53,6 +53,9 @@ interface ChatStore {
 
   sidebarRefreshKey: number;
   triggerSidebarRefresh: () => void;
+
+  /** Wipes all state (used on logout/delete account to prevent data leaks) */
+  clearStore: () => void;
 }
 
 /** Normalize a timestamp string to ensure it ends with a timezone indicator. */
@@ -60,19 +63,28 @@ function normalizeTimestamp(ts: string): string {
   return ts.endsWith('Z') || ts.includes('+') ? ts : ts + 'Z';
 }
 
+const initialState = {
+  currentUser: null,
+  activeChatUserId: null,
+  friends: [],
+  messages: {},
+  unreadCounts: {},
+  lastMessageTimes: {},
+  onlineUsers: {},
+  typingUsers: {},
+  sidebarRefreshKey: 0,
+};
+
 export const useChatStore = create<ChatStore>()(
   persist(
     (set) => ({
-      currentUser: null,
+      ...initialState,
+      clearStore: () => set(initialState),
+
       setCurrentUser: (user) => set({ currentUser: user }),
-
-      activeChatUserId: null,
       setActiveChatUserId: (id) => set({ activeChatUserId: id }),
-
-      friends: [],
       setFriends: (friends) => set({ friends }),
 
-      messages: {},
 
       addMessage: (userId, message) =>
         set((state) => {

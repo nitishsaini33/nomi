@@ -99,7 +99,7 @@ export default function Sidebar({ user }: { user: any }) {
 
   const handleLogout = () => {
     localStorage.removeItem('token');
-    setCurrentUser(null);
+    useChatStore.getState().clearStore(); // Completely wipe the cache
     router.push('/login');
   };
 
