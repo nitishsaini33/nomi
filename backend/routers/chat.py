@@ -1,8 +1,11 @@
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.future import select
 from sqlalchemy.orm import selectinload
+from sqlalchemy import func, case, update, delete
 from typing import List
+from datetime import datetime, timezone, timedelta
+from dateutil import parser as dateutil_parser
 
 from core.database import get_db
 from models.user import User
@@ -12,7 +15,6 @@ from schemas.message import MessageResponse
 from schemas.reaction import ReactionCreate, ReactionResponse
 from services.auth_service import get_current_user
 from services.websocket_manager import manager
-from fastapi import HTTPException
 
 router = APIRouter(prefix="/chat", tags=["chat"])
 
@@ -25,27 +27,27 @@ async def get_conversation_previews(
     """
     Returns {friend_id, last_timestamp} for every conversation the current
     user has participated in — one entry per friend, sorted most-recent first.
-    Used by the sidebar to sort the friends list on initial load.
+
+    Uses SQL aggregation instead of loading all messages into Python.
     """
     uid = current_user.id
 
+    # Compute the "other user" per message, then GROUP BY to get the latest timestamp
+    other_user_id = case(
+        (Message.sender_id == uid, Message.receiver_id),
+        else_=Message.sender_id,
+    ).label("friend_id")
+
     result = await db.execute(
-        select(Message.sender_id, Message.receiver_id, Message.timestamp)
-        .where(
-            (Message.sender_id == uid) | (Message.receiver_id == uid)
-        )
-        .order_by(Message.timestamp.desc())
+        select(other_user_id, func.max(Message.timestamp).label("last_ts"))
+        .where((Message.sender_id == uid) | (Message.receiver_id == uid))
+        .group_by(other_user_id)
+        .order_by(func.max(Message.timestamp).desc())
     )
 
-    previews: dict[str, str] = {}
-    for row in result.all():
-        friend_id = row.receiver_id if row.sender_id == uid else row.sender_id
-        if friend_id not in previews:          # keep only the latest per friend
-            previews[friend_id] = row.timestamp.isoformat()
-
     return [
-        {"friend_id": fid, "last_timestamp": ts}
-        for fid, ts in previews.items()
+        {"friend_id": row.friend_id, "last_timestamp": row.last_ts.isoformat()}
+        for row in result.all()
     ]
 
 
@@ -63,8 +65,7 @@ async def get_chat_history(
     )
     
     if cursor:
-        from dateutil import parser
-        cursor_date = parser.parse(cursor)
+        cursor_date = dateutil_parser.parse(cursor)
         query = query.where(Message.timestamp < cursor_date)
         
     # Order descending to get newest messages first before the cursor
@@ -114,7 +115,6 @@ async def delete_message(
         raise HTTPException(status_code=403, detail="Not authorized")
     
     # Enforce 5-minute deletion window
-    from datetime import datetime, timezone, timedelta
     msg_age = datetime.now(timezone.utc) - msg.timestamp.replace(tzinfo=timezone.utc)
     if msg_age > timedelta(minutes=5):
         raise HTTPException(status_code=403, detail="Messages can only be deleted within 5 minutes of sending")
@@ -179,4 +179,3 @@ async def react_to_message(
     await manager.send_personal_message({"type": "message_reaction", "payload": payload}, notify_id)
     
     return reaction_obj
-

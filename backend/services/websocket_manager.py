@@ -6,6 +6,9 @@ from fastapi import WebSocket
 
 from core.redis import get_redis
 
+logger = logging.getLogger(__name__)
+
+
 class ConnectionManager:
     def __init__(self):
         self.active_connections: Dict[str, List[WebSocket]] = {}
@@ -52,21 +55,11 @@ class ConnectionManager:
                             payload = data.get("payload")
                             
                             if target == "ALL":
-                                for connections in self.active_connections.values():
-                                    for connection in connections:
-                                        try:
-                                            await connection.send_text(json.dumps(payload))
-                                        except:
-                                            pass
+                                await self._broadcast_local(payload)
                             elif target in self.active_connections:
-                                for connection in self.active_connections[target]:
-                                    try:
-                                        await connection.send_text(json.dumps(payload))
-                                    except:
-                                        pass
+                                await self._send_to_user(target, payload)
                 except Exception as inner_e:
-                    # Ignore inner drops to allow reconnect
-                    pass
+                    logger.debug(f"PubSub listener inner error: {inner_e}")
                 finally:
                     await pubsub.close()
                     
@@ -90,7 +83,7 @@ class ConnectionManager:
             if redis:
                 await redis.sadd("online_users", user_id)
         except Exception as e:
-            logging.error(f"Redis sadd error: {e}")
+            logger.error(f"Redis sadd error: {e}")
             
     def disconnect(self, websocket: WebSocket, user_id: str):
         if user_id in self.active_connections:
@@ -117,19 +110,43 @@ class ConnectionManager:
                             )
                             await session.commit()
                     except Exception as e:
-                        logging.error(f"Error updating last_seen: {e}")
+                        logger.error(f"Error updating last_seen: {e}")
                 
                 asyncio.create_task(cleanup())
+
+    async def _send_to_user(self, user_id: str, message: dict) -> None:
+        """Send to all connections of a single user, concurrently."""
+        if user_id not in self.active_connections:
+            return
+        msg_text = json.dumps(message) if isinstance(message, dict) else message
+        tasks = []
+        for connection in list(self.active_connections[user_id]):
+            tasks.append(self._safe_send(connection, msg_text))
+        if tasks:
+            await asyncio.gather(*tasks)
+
+    async def _broadcast_local(self, message: dict) -> None:
+        """Broadcast to ALL locally connected users, concurrently."""
+        msg_text = json.dumps(message) if isinstance(message, dict) else message
+        tasks = []
+        for connections in self.active_connections.values():
+            for connection in list(connections):
+                tasks.append(self._safe_send(connection, msg_text))
+        if tasks:
+            await asyncio.gather(*tasks)
+
+    @staticmethod
+    async def _safe_send(connection: WebSocket, msg_text: str) -> None:
+        """Send text to a WebSocket, silently ignoring closed connections."""
+        try:
+            await connection.send_text(msg_text)
+        except Exception:
+            pass
 
     async def _send_local(self, message: dict, user_id: str) -> bool:
         """Send directly to locally connected WebSockets. Returns True if user was found locally."""
         if user_id in self.active_connections:
-            msg_text = json.dumps(message)
-            for connection in self.active_connections[user_id]:
-                try:
-                    await connection.send_text(msg_text)
-                except:
-                    pass
+            await self._send_to_user(user_id, message)
             return True
         return False
 
@@ -147,29 +164,18 @@ class ConnectionManager:
                         json.dumps({"target": user_id, "payload": message})
                     )
             except Exception as e:
-                logging.error(f"Redis publish error (personal): {e}")
+                logger.error(f"Redis publish error (personal): {e}")
 
     async def broadcast(self, message: dict):
         """Send to all locally connected users. Also publishes to Redis for multi-server support."""
-        msg_text = json.dumps(message)
-        for user_id, connections in self.active_connections.items():
-            for connection in list(connections):
-                try:
-                    await connection.send_text(msg_text)
-                except:
-                    pass
+        await self._broadcast_local(message)
         # Publish to Redis for other server instances — skip if single server to avoid double-delivery
         # Only publish to Redis, don't re-deliver locally (pubsub listener will ignore local)
 
     async def broadcast_status(self, user_id: str, status: str):
-        """Broadcast online/offline status directly to all local connections. No Redis needed."""
-        payload = json.dumps({"type": "user_status", "payload": {"user_id": user_id, "status": status}})
-        for uid, connections in self.active_connections.items():
-            for connection in list(connections):
-                try:
-                    await connection.send_text(payload)
-                except:
-                    pass
+        """Broadcast online/offline status concurrently to all local connections."""
+        payload = {"type": "user_status", "payload": {"user_id": user_id, "status": status}}
+        await self._broadcast_local(payload)
 
     async def get_online_users(self) -> List[str]:
         """Always use in-memory connections — reliable, no Redis dependency."""

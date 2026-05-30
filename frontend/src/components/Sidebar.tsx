@@ -1,5 +1,5 @@
 'use client'
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo, memo, useCallback } from 'react';
 import { api } from '@/lib/api';
 import { UserPlus, Search, LogOut, Trash2 } from 'lucide-react';
 import RequestModal from './RequestModal';
@@ -125,19 +125,21 @@ export default function Sidebar({ user }: { user: any }) {
    * 2. Then sorted by last message time, most recent first
    * 3. Friends with no messages ever go to the bottom
    */
-  const sortedFriends = [...friends].sort((a, b) => {
-    const unreadA = unreadCounts[a.id] || 0;
-    const unreadB = unreadCounts[b.id] || 0;
-    const timeA   = lastMessageTimes[a.id] || 0;
-    const timeB   = lastMessageTimes[b.id] || 0;
+  const sortedFriends = useMemo(() => {
+    return [...friends].sort((a, b) => {
+      const unreadA = unreadCounts[a.id] || 0;
+      const unreadB = unreadCounts[b.id] || 0;
+      const timeA   = lastMessageTimes[a.id] || 0;
+      const timeB   = lastMessageTimes[b.id] || 0;
 
-    // Unread first
-    if (unreadA > 0 && unreadB === 0) return -1;
-    if (unreadA === 0 && unreadB > 0) return 1;
+      // Unread first
+      if (unreadA > 0 && unreadB === 0) return -1;
+      if (unreadA === 0 && unreadB > 0) return 1;
 
-    // Same unread tier → most recent message first
-    return timeB - timeA;
-  });
+      // Same unread tier → most recent message first
+      return timeB - timeA;
+    });
+  }, [friends, unreadCounts, lastMessageTimes]);
 
   return (
     <div className="h-full bg-white border-2 border-text shadow-brutal flex flex-col overflow-hidden">

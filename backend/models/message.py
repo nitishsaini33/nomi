@@ -1,10 +1,9 @@
-from sqlalchemy import Column, String, ForeignKey, DateTime, Boolean, Enum
+from sqlalchemy import Column, String, ForeignKey, DateTime, Boolean, Enum, Index
 from core.database import Base
 import uuid
 import enum
 from datetime import datetime, timezone
 from sqlalchemy.orm import relationship
-from datetime import datetime, timezone
 
 class MessageStatus(str, enum.Enum):
     SENT = "SENT"
@@ -13,6 +12,12 @@ class MessageStatus(str, enum.Enum):
 
 class Message(Base):
     __tablename__ = "messages"
+    __table_args__ = (
+        # Critical: covers WHERE (sender_id=X AND receiver_id=Y) ORDER BY timestamp DESC
+        Index("ix_messages_sender_receiver_ts", "sender_id", "receiver_id", "timestamp"),
+        # Critical: covers the reverse direction of the same query
+        Index("ix_messages_receiver_sender_ts", "receiver_id", "sender_id", "timestamp"),
+    )
     
     id = Column(String, primary_key=True, default=lambda: str(uuid.uuid4()), index=True)
     sender_id = Column(String, ForeignKey("users.id"), nullable=False)

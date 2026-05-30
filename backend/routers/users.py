@@ -2,6 +2,7 @@ from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.future import select
 from sqlalchemy.orm import selectinload
+from sqlalchemy import delete
 from typing import List
 
 from core.database import get_db
@@ -20,7 +21,10 @@ router = APIRouter(prefix="/users", tags=["users"])
 @router.get("/search", response_model=List[UserResponse])
 async def search_users(query: str, db: AsyncSession = Depends(get_db), current_user: User = Depends(get_current_user)):
     result = await db.execute(
-        select(User).where(User.username.ilike(f"%{query}%")).where(User.id != current_user.id)
+        select(User)
+        .where(User.username.ilike(f"%{query}%"))
+        .where(User.id != current_user.id)
+        .limit(20)
     )
     return result.scalars().all()
 
@@ -101,7 +105,7 @@ async def unfriend_user(friend_id: str, db: AsyncSession = Depends(get_db), curr
     
     # Delete all messages between them
     # SQLAlchemy 2.0 delete syntax for async
-    from sqlalchemy import delete
+
     await db.execute(
         delete(Message).where(
             ((Message.sender_id == current_user.id) & (Message.receiver_id == friend_id)) |
@@ -121,7 +125,7 @@ async def unfriend_user(friend_id: str, db: AsyncSession = Depends(get_db), curr
 
 @router.delete("/me")
 async def delete_my_account(db: AsyncSession = Depends(get_db), current_user: User = Depends(get_current_user)):
-    from sqlalchemy import delete
+
     uid = current_user.id
     
     # Manually delete dependent records to bypass FK cascade restrictions

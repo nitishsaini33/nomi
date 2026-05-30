@@ -10,6 +10,9 @@ class Settings(BaseSettings):
     ACCESS_TOKEN_EXPIRE_MINUTES: int = 60 * 24 * 7 # 7 days for convenience
     
     GOOGLE_SCRIPT_URL: str = ""
+    
+    # Comma-separated list of allowed origins; defaults to permissive for dev
+    CORS_ORIGINS: str = "*"
 
     class Config:
         env_file = ".env"

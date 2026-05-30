@@ -1,10 +1,131 @@
 'use client'
-import { useState, useEffect, useRef, useCallback } from 'react';
+import { useState, useEffect, useRef, useCallback, useMemo, memo } from 'react';
 import { api } from '@/lib/api';
-import { useChatStore } from '@/store/chatStore';
+import { useChatStore, nextOptimisticId } from '@/store/chatStore';
 import { wsClient } from '@/lib/wsClient';
 import { Send, ArrowLeft } from 'lucide-react';
 import { useRouter } from 'next/navigation';
+
+// ── Memoized timestamp formatter ──────────────────────────────────────────────
+// toLocaleTimeString is expensive (calls into ICU). Cache results per timestamp.
+const _timeCache = new Map<string, string>();
+function formatTime(timestamp: string): string {
+  let cached = _timeCache.get(timestamp);
+  if (!cached) {
+    cached = new Date(timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+    _timeCache.set(timestamp, cached);
+    // Prevent unbounded growth
+    if (_timeCache.size > 2000) {
+      const first = _timeCache.keys().next().value;
+      if (first) _timeCache.delete(first);
+    }
+  }
+  return cached;
+}
+
+// ── Memoized Message Bubble ───────────────────────────────────────────────────
+// Prevents re-rendering ALL messages when only one changes (e.g., new message arrives)
+const MessageBubble = memo(function MessageBubble({
+  msg,
+  isMe,
+  canDelete,
+  currentUserId,
+  otherUsername,
+  openReactionMsgId,
+  setOpenReactionMsgId,
+  deleteMessage,
+  reactToMessage,
+}: {
+  msg: any;
+  isMe: boolean;
+  canDelete: boolean;
+  currentUserId: string;
+  otherUsername: string;
+  openReactionMsgId: string | null;
+  setOpenReactionMsgId: (id: string | null) => void;
+  deleteMessage: (id: string) => void;
+  reactToMessage: (msgId: string, emoji: string) => void;
+}) {
+  return (
+    <div className={`flex ${isMe ? 'justify-end' : 'justify-start'} group`}>
+      <div
+        className={[
+          'max-w-[80%] sm:max-w-[72%] px-3 py-2 font-bold border-2 border-text relative',
+          'shadow-brutal text-sm sm:text-base break-words',
+          isMe ? 'bg-primary transform rotate-1' : 'bg-white transform -rotate-1',
+          msg.is_deleted ? 'opacity-50 italic' : ''
+        ].join(' ')}
+      >
+        {/* Action buttons (visible on hover) */}
+        <div className="absolute -top-3 -right-3 flex gap-1 hidden group-hover:flex z-10">
+          {/* Reaction Button */}
+          {!msg.is_deleted && msg.id && (
+            <div className="relative">
+              <button 
+                className="bg-yellow-300 text-text w-6 h-6 border-2 border-text font-black text-xs flex items-center justify-center hover:scale-110 transition-transform shadow-sm" 
+                title="React"
+                onClick={() => setOpenReactionMsgId(openReactionMsgId === msg.id ? null : msg.id)}
+              >
+                +
+              </button>
+              {openReactionMsgId === msg.id && (
+                <div className="absolute top-full right-0 mt-1 flex bg-white border-2 border-text shadow-brutal p-1 gap-1 flex-row z-20">
+                  {['👍', '❤️', '😂', '😮', '😢'].map(emoji => (
+                    <button key={emoji} onClick={() => reactToMessage(msg.id, emoji)} className="hover:scale-125 transition-transform">
+                      {emoji}
+                    </button>
+                  ))}
+                </div>
+              )}
+            </div>
+          )}
+          
+          {/* Delete button (only within 5 minutes) */}
+          {canDelete && (
+            <button
+              onClick={() => deleteMessage(msg.id)}
+              className="bg-red-500 text-white w-6 h-6 border-2 border-text font-black text-xs flex items-center justify-center hover:scale-110 transition-transform shadow-sm"
+              title="Delete Message (5 min window)"
+            >
+              X
+            </button>
+          )}
+        </div>
+
+        {msg.content}
+        
+        {/* Display Reactions */}
+        {msg.reactions && msg.reactions.length > 0 && (
+          <div className="flex flex-wrap gap-1 mt-1">
+            {msg.reactions.map((r: any) => (
+              <span key={r.id} className="text-sm bg-white/50 px-1 border border-text/20 rounded-sm" title={r.user_id === currentUserId ? 'You' : otherUsername}>
+                {r.emoji}
+              </span>
+            ))}
+          </div>
+        )}
+        
+        <div className="flex items-center justify-end gap-1 mt-1 border-t border-text/20 pt-1">
+          {msg.is_edited && !msg.is_deleted && (
+            <span className="text-[9px] sm:text-[10px] font-black opacity-50 mr-1">(edited)</span>
+          )}
+          <div className="text-[9px] sm:text-[10px] font-black opacity-60 text-right">
+            {formatTime(msg.timestamp)}
+          </div>
+          {/* Read Receipts */}
+          {isMe && (
+            <div className="text-[10px] font-black">
+              {msg.status === 'READ' ? <span className="text-blue-600">✓✓</span> : 
+               msg.status === 'DELIVERED' ? <span>✓✓</span> : 
+               <span className="opacity-60">✓</span>}
+            </div>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+});
+
 
 export default function ChatWindow({
   otherUserId,
@@ -13,7 +134,6 @@ export default function ChatWindow({
   otherUserId: string;
   currentUser: any;
 }) {
-  const [otherUser, setOtherUser] = useState<any>(null);
   const { 
     messages, 
     setMessages, 
@@ -22,13 +142,20 @@ export default function ChatWindow({
     onlineUsers, 
     typingUsers,
     addReaction,
-    updateMessage
+    updateMessage,
+    friends,
   } = useChatStore();
   
   const [input, setInput] = useState('');
   const [isLoadingMore, setIsLoadingMore] = useState(false);
   const [hasMore, setHasMore] = useState(true);
   const [openReactionMsgId, setOpenReactionMsgId] = useState<string | null>(null);
+
+  // Look up the other user from the store instead of fetching the entire friends list
+  const otherUser = useMemo(
+    () => friends.find((f: any) => f.id === otherUserId) || null,
+    [friends, otherUserId]
+  );
 
   // Scroll refs
   const scrollRef = useRef<HTMLDivElement>(null);
@@ -37,6 +164,7 @@ export default function ChatWindow({
   const lastScrollHeightRef = useRef<number>(0);
   const isRestoringScrollRef = useRef(false); // true while loading older msgs
   const hasScrolledToBottomRef = useRef(false); // has initial scroll fired for current chat
+  const prevUnreadIdsRef = useRef<Set<string>>(new Set()); // track sent read receipts
   const router = useRouter();
 
   const chatMessages = messages[otherUserId] || [];
@@ -45,10 +173,9 @@ export default function ChatWindow({
   useEffect(() => {
     setActiveChatUserId(otherUserId);
     clearUnread(otherUserId);
-    setOtherUser(null);
     hasScrolledToBottomRef.current = false; // reset so we scroll fresh
+    prevUnreadIdsRef.current = new Set();
 
-    fetchOtherUser();
     fetchMessages();
 
     return () => {
@@ -88,8 +215,6 @@ export default function ChatWindow({
         scrollToBottom('instant');
         hasScrolledToBottomRef.current = true;
       }
-      // If container isn't mounted yet (loading screen showing), do NOT mark as done.
-      // The otherUser useEffect below will fire the scroll once the real UI mounts.
       return;
     }
 
@@ -111,28 +236,23 @@ export default function ChatWindow({
     }
   }, [otherUser]);
 
-  // Send read receipts
+  // ── Debounced read receipts ──────────────────────────────────────────────
+  // Only fire when NEW unread messages appear, not on every state change
   useEffect(() => {
     const unreadMsgIds = chatMessages
       .filter((m: any) => m.sender_id === otherUserId && m.status !== 'READ')
       .map((m: any) => m.id)
       .filter(Boolean);
-    if (unreadMsgIds.length > 0) {
-      wsClient.sendReadReceipt(otherUserId, unreadMsgIds);
+    
+    // Only send for IDs we haven't already sent a receipt for
+    const newUnread = unreadMsgIds.filter((id: string) => !prevUnreadIdsRef.current.has(id));
+    if (newUnread.length > 0) {
+      wsClient.sendReadReceipt(otherUserId, newUnread);
+      newUnread.forEach((id: string) => prevUnreadIdsRef.current.add(id));
     }
   }, [chatMessages, otherUserId]);
 
   // ── Data fetching ────────────────────────────────────────────────────────
-  const fetchOtherUser = async () => {
-    try {
-      const users = await api.get('/users/friends');
-      const friend = users.find((u: any) => u.id === otherUserId);
-      if (friend) setOtherUser(friend);
-    } catch (e) {
-      console.error(e);
-    }
-  };
-
   const fetchMessages = async (cursor?: string) => {
     if (!cursor) setHasMore(true);
     try {
@@ -173,7 +293,7 @@ export default function ChatWindow({
     if (typingTimeoutRef.current) clearTimeout(typingTimeoutRef.current);
     const content = input.trim();
     const optimisticMsg = {
-      id: `optimistic-${Date.now()}`,
+      id: nextOptimisticId(),
       sender_id: currentUser.id,
       receiver_id: otherUserId,
       content,
@@ -189,7 +309,7 @@ export default function ChatWindow({
     if (sent) setInput('');
   };
 
-  const deleteMessage = async (msgId: string) => {
+  const deleteMessage = useCallback(async (msgId: string) => {
     if (!confirm('Delete this message?')) return;
     updateMessage(otherUserId, msgId, { is_deleted: true, content: 'This message was deleted' });
     try {
@@ -197,9 +317,9 @@ export default function ChatWindow({
     } catch (e) {
       console.error('Failed to delete', e);
     }
-  };
+  }, [otherUserId, updateMessage]);
 
-  const reactToMessage = async (msgId: string, emoji: string) => {
+  const reactToMessage = useCallback(async (msgId: string, emoji: string) => {
     setOpenReactionMsgId(null);
     try {
       addReaction(otherUserId, msgId, {
@@ -214,9 +334,10 @@ export default function ChatWindow({
     } catch (e) {
       console.error('Failed to react', e);
     }
-  };
+  }, [otherUserId, currentUser.id, addReaction]);
 
-  const handleUnfriend = async () => {
+  const handleUnfriend = useCallback(async () => {
+    if (!otherUser) return;
     if (!confirm(`Are you sure you want to unfriend ${otherUser.username}? This will delete all chat history for both of you.`)) return;
     try {
       await api.delete(`/users/friends/${otherUserId}`);
@@ -224,7 +345,7 @@ export default function ChatWindow({
     } catch (e) {
       console.error('Failed to unfriend', e);
     }
-  };
+  }, [otherUserId, otherUser, router]);
 
   // ── Render ───────────────────────────────────────────────────────────────
   if (!otherUser) {
@@ -282,85 +403,18 @@ export default function ChatWindow({
           const msgAgeMs = Date.now() - new Date(msg.timestamp).getTime();
           const canDelete = isMe && !msg.is_deleted && msg.id && msgAgeMs < 5 * 60 * 1000;
           return (
-            <div
+            <MessageBubble
               key={msg.id || i}
-              className={`flex ${isMe ? 'justify-end' : 'justify-start'} group`}
-            >
-              <div
-                className={[
-                  'max-w-[80%] sm:max-w-[72%] px-3 py-2 font-bold border-2 border-text relative',
-                  'shadow-brutal text-sm sm:text-base break-words',
-                  isMe ? 'bg-primary transform rotate-1' : 'bg-white transform -rotate-1',
-                  msg.is_deleted ? 'opacity-50 italic' : ''
-                ].join(' ')}
-              >
-                {/* Action buttons (visible on hover) */}
-                <div className="absolute -top-3 -right-3 flex gap-1 hidden group-hover:flex z-10">
-                  {/* Reaction Button */}
-                  {!msg.is_deleted && msg.id && (
-                    <div className="relative">
-                      <button 
-                        className="bg-yellow-300 text-text w-6 h-6 border-2 border-text font-black text-xs flex items-center justify-center hover:scale-110 transition-transform shadow-sm" 
-                        title="React"
-                        onClick={() => setOpenReactionMsgId(openReactionMsgId === msg.id ? null : msg.id)}
-                      >
-                        +
-                      </button>
-                      {openReactionMsgId === msg.id && (
-                        <div className="absolute top-full right-0 mt-1 flex bg-white border-2 border-text shadow-brutal p-1 gap-1 flex-row z-20">
-                          {['👍', '❤️', '😂', '😮', '😢'].map(emoji => (
-                            <button key={emoji} onClick={() => reactToMessage(msg.id, emoji)} className="hover:scale-125 transition-transform">
-                              {emoji}
-                            </button>
-                          ))}
-                        </div>
-                      )}
-                    </div>
-                  )}
-                  
-                  {/* Delete button (only within 5 minutes) */}
-                  {canDelete && (
-                    <button
-                      onClick={() => deleteMessage(msg.id)}
-                      className="bg-red-500 text-white w-6 h-6 border-2 border-text font-black text-xs flex items-center justify-center hover:scale-110 transition-transform shadow-sm"
-                      title="Delete Message (5 min window)"
-                    >
-                      X
-                    </button>
-                  )}
-                </div>
-
-                {msg.content}
-                
-                {/* Display Reactions */}
-                {msg.reactions && msg.reactions.length > 0 && (
-                  <div className="flex flex-wrap gap-1 mt-1">
-                    {msg.reactions.map((r: any) => (
-                      <span key={r.id} className="text-sm bg-white/50 px-1 border border-text/20 rounded-sm" title={r.user_id === currentUser.id ? 'You' : otherUser.username}>
-                        {r.emoji}
-                      </span>
-                    ))}
-                  </div>
-                )}
-                
-                <div className="flex items-center justify-end gap-1 mt-1 border-t border-text/20 pt-1">
-                  {msg.is_edited && !msg.is_deleted && (
-                    <span className="text-[9px] sm:text-[10px] font-black opacity-50 mr-1">(edited)</span>
-                  )}
-                  <div className="text-[9px] sm:text-[10px] font-black opacity-60 text-right">
-                    {new Date(msg.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-                  </div>
-                  {/* Read Receipts */}
-                  {isMe && (
-                    <div className="text-[10px] font-black">
-                      {msg.status === 'READ' ? <span className="text-blue-600">✓✓</span> : 
-                       msg.status === 'DELIVERED' ? <span>✓✓</span> : 
-                       <span className="opacity-60">✓</span>}
-                    </div>
-                  )}
-                </div>
-              </div>
-            </div>
+              msg={msg}
+              isMe={isMe}
+              canDelete={canDelete}
+              currentUserId={currentUser.id}
+              otherUsername={otherUser.username}
+              openReactionMsgId={openReactionMsgId}
+              setOpenReactionMsgId={setOpenReactionMsgId}
+              deleteMessage={deleteMessage}
+              reactToMessage={reactToMessage}
+            />
           );
         })}
 

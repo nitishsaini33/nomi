@@ -6,6 +6,16 @@ interface User {
   username: string;
 }
 
+/** Max messages per conversation to persist in localStorage.
+ *  Prevents unbounded growth that causes multi-second JSON.parse on page load. */
+const MAX_PERSISTED_MESSAGES = 50;
+
+/** Counter for optimistic message IDs — avoids timestamp collision. */
+let _optimisticCounter = 0;
+export function nextOptimisticId(): string {
+  return `optimistic-${Date.now()}-${++_optimisticCounter}`;
+}
+
 interface ChatStore {
   currentUser: User | null;
   setCurrentUser: (user: User | null) => void;
@@ -45,6 +55,11 @@ interface ChatStore {
   triggerSidebarRefresh: () => void;
 }
 
+/** Normalize a timestamp string to ensure it ends with a timezone indicator. */
+function normalizeTimestamp(ts: string): string {
+  return ts.endsWith('Z') || ts.includes('+') ? ts : ts + 'Z';
+}
+
 export const useChatStore = create<ChatStore>()(
   persist(
     (set) => ({
@@ -68,10 +83,7 @@ export const useChatStore = create<ChatStore>()(
           }
           
           // Normalize naive UTC timestamps from backend
-          const safeTimestamp = message.timestamp.endsWith('Z') || message.timestamp.includes('+') 
-            ? message.timestamp 
-            : message.timestamp + 'Z';
-          message.timestamp = safeTimestamp;
+          message = { ...message, timestamp: normalizeTimestamp(message.timestamp) };
 
           // If this is a server-confirmed message, replace the matching optimistic one
           if (message.id && !message.id.startsWith('optimistic-')) {
@@ -110,7 +122,7 @@ export const useChatStore = create<ChatStore>()(
           // Normalize timestamps
           const normalizedFetched = fetched.map((m: any) => ({
             ...m,
-            timestamp: m.timestamp.endsWith('Z') || m.timestamp.includes('+') ? m.timestamp : m.timestamp + 'Z'
+            timestamp: normalizeTimestamp(m.timestamp),
           }));
 
           // Keep any WS messages that arrived DURING the fetch (not yet in DB response)
@@ -168,9 +180,7 @@ export const useChatStore = create<ChatStore>()(
       lastMessageTimes: {},
       setLastMessageTime: (userId, isoTimestamp) =>
         set((state) => {
-          const safeTimestamp = isoTimestamp.endsWith('Z') || isoTimestamp.includes('+') 
-            ? isoTimestamp 
-            : isoTimestamp + 'Z';
+          const safeTimestamp = normalizeTimestamp(isoTimestamp);
           return {
             lastMessageTimes: {
               ...state.lastMessageTimes,
@@ -240,7 +250,15 @@ export const useChatStore = create<ChatStore>()(
     {
       name: 'chat-storage', // name of the item in the storage (must be unique)
       partialize: (state) => ({
-        messages: state.messages,
+        // Cap persisted messages to prevent unbounded localStorage growth.
+        // On reload, the most recent N messages load instantly from cache,
+        // then the full set is fetched from the server.
+        messages: Object.fromEntries(
+          Object.entries(state.messages).map(([userId, msgs]) => [
+            userId,
+            msgs.slice(-MAX_PERSISTED_MESSAGES),
+          ])
+        ),
         lastMessageTimes: state.lastMessageTimes,
         unreadCounts: state.unreadCounts,
         friends: state.friends,
