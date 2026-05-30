@@ -488,7 +488,7 @@ export default function ChatWindow({
             >
               <EmojiPicker 
                 onEmojiClick={(emojiData: any) => setInput(prev => prev + emojiData.emoji)}
-                theme="dark" as any
+                theme={"dark" as any}
                 previewConfig={{ showPreview: false }}
                 skinTonesDisabled
                 height={320}
