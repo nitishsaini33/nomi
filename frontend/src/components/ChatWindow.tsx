@@ -496,8 +496,19 @@ export default function ChatWindow({
 
           {/* Send Button */}
           <button
-            type="submit"
+            type="button"
             disabled={!input.trim()}
+            onMouseDown={(e) => {
+              e.preventDefault(); // Prevents focus loss on desktop
+            }}
+            onClick={(e) => {
+              e.preventDefault();
+              sendMessage(e as any);
+            }}
+            onTouchStart={(e) => {
+              e.preventDefault(); // Prevents focus loss on mobile
+              sendMessage(e as any);
+            }}
             className={`w-12 h-12 rounded-full flex items-center justify-center flex-shrink-0 shadow-lg transition-all ${
               input.trim() 
                 ? 'bg-emerald-500 hover:bg-emerald-400 text-white shadow-emerald-500/25' 
