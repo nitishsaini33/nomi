@@ -14,6 +14,14 @@ export const metadata: Metadata = {
   description: "A high-contrast, modern chatting application",
 };
 
+export const viewport = {
+  width: "device-width",
+  initialScale: 1,
+  maximumScale: 1,
+  userScalable: false,
+  interactiveWidget: "resizes-content",
+};
+
 export default function RootLayout({
   children,
 }: Readonly<{
