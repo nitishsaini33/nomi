@@ -3,6 +3,7 @@ import { useState, useEffect } from 'react';
 import { createPortal } from 'react-dom';
 import { api } from '@/lib/api';
 import { X, UserCheck, RefreshCw, AlertCircle } from 'lucide-react';
+import { motion, AnimatePresence } from 'framer-motion';
 
 export default function RequestModal({ onClose }: { onClose: () => void }) {
   const [requests, setRequests] = useState<any[]>([]);
@@ -37,23 +38,28 @@ export default function RequestModal({ onClose }: { onClose: () => void }) {
 
   const modal = (
     <div
-      className="fixed inset-0 z-[9999] flex items-end sm:items-center justify-center bg-black/75 backdrop-blur-sm sm:p-8"
+      className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/60 backdrop-blur-md p-4 sm:p-8"
       onClick={(e) => e.target === e.currentTarget && onClose()}
     >
-      <div className="flex flex-col bg-white w-full max-h-[82dvh] sm:w-[480px] sm:max-h-[72vh] brutal-box">
-
+      <motion.div 
+        initial={{ opacity: 0, scale: 0.95, y: 20 }}
+        animate={{ opacity: 1, scale: 1, y: 0 }}
+        exit={{ opacity: 0, scale: 0.95, y: 20 }}
+        transition={{ type: "spring", stiffness: 300, damping: 25 }}
+        className="flex flex-col bg-[#0B0F19]/80 backdrop-blur-2xl w-full max-h-[85dvh] sm:w-[480px] sm:max-h-[72vh] rounded-3xl border border-white/10 shadow-[0_20px_60px_-15px_rgba(0,0,0,0.7)] overflow-hidden"
+      >
         {/* ── Header ── */}
-        <div className="flex-shrink-0 flex items-center justify-between gap-3 px-5 py-4 border-b-4 border-text bg-background">
+        <div className="flex-shrink-0 flex items-center justify-between gap-3 px-6 py-5 border-b border-white/10 bg-white/5">
           <div className="flex items-center gap-3 min-w-0">
-            <div className="p-1.5 bg-primary border-2 border-text flex-shrink-0">
+            <div className="p-2 bg-indigo-500/20 text-indigo-400 rounded-xl border border-indigo-500/30 flex-shrink-0">
               <UserCheck size={20} />
             </div>
             <div className="min-w-0">
-              <h2 className="text-xl sm:text-2xl font-black uppercase leading-tight">
+              <h2 className="text-lg sm:text-xl font-bold text-white leading-tight">
                 Friend Requests
               </h2>
               {!loading && !error && (
-                <p className="text-xs font-bold text-gray-500 mt-0.5">
+                <p className="text-xs font-medium text-gray-400 mt-0.5">
                   {requests.length === 0
                     ? 'No pending requests'
                     : `${requests.length} pending`}
@@ -66,93 +72,103 @@ export default function RequestModal({ onClose }: { onClose: () => void }) {
             <button
               onClick={fetchRequests}
               title="Refresh"
-              className="p-2 bg-background border-2 border-text hover:bg-primary transition-colors"
+              className="p-2 rounded-xl text-gray-400 hover:text-white hover:bg-white/10 transition-all border border-transparent hover:border-white/10"
             >
-              <RefreshCw size={15} />
+              <RefreshCw size={18} className={loading ? 'animate-spin' : ''} />
             </button>
             <button
               onClick={onClose}
               aria-label="Close"
-              className="w-9 h-9 flex items-center justify-center bg-text text-white border-2 border-text hover:bg-primary hover:text-text transition-colors"
+              className="p-2 rounded-xl text-gray-400 hover:text-white hover:bg-white/10 transition-all border border-transparent hover:border-white/10"
             >
-              <X size={18} />
+              <X size={20} />
             </button>
           </div>
         </div>
 
         {/* ── Body ── */}
-        <div className="flex-1 overflow-y-auto p-4 sm:p-5 space-y-3">
+        <div className="flex-1 overflow-y-auto p-6 space-y-4 no-scrollbar">
 
           {/* Loading */}
           {loading && (
-            <div className="py-14 text-center font-black text-base animate-pulse text-gray-400 uppercase tracking-widest">
-              Loading...
+            <div className="py-16 flex flex-col items-center justify-center gap-4 text-center">
+              <div className="w-8 h-8 border-2 border-indigo-500/30 border-t-indigo-500 rounded-full animate-spin" />
+              <p className="text-sm font-medium text-gray-400">Loading requests...</p>
             </div>
           )}
 
           {/* Error */}
           {!loading && error && (
-            <div className="py-8 flex flex-col items-center gap-4 text-center">
-              <div className="p-3 bg-red-100 border-4 border-red-500">
-                <AlertCircle size={36} className="text-red-500" />
+            <motion.div 
+              initial={{ opacity: 0 }} animate={{ opacity: 1 }}
+              className="py-10 flex flex-col items-center gap-4 text-center"
+            >
+              <div className="p-4 bg-red-500/10 rounded-full border border-red-500/20">
+                <AlertCircle size={32} className="text-red-400" />
               </div>
-              <p className="font-black text-sm text-red-600 uppercase">{error}</p>
+              <p className="font-semibold text-sm text-red-300">{error}</p>
               <button
                 onClick={fetchRequests}
-                className="brutal-btn bg-primary px-5 py-2 text-sm"
+                className="glass-button-secondary text-sm mt-2"
               >
-                TRY AGAIN
+                Try Again
               </button>
-            </div>
+            </motion.div>
           )}
 
           {/* Empty state */}
           {!loading && !error && requests.length === 0 && (
-            <div className="py-10 flex flex-col items-center gap-4 text-center">
-              <div className="w-16 h-16 bg-background border-4 border-text flex items-center justify-center text-3xl shadow-brutal">
+            <motion.div 
+              initial={{ opacity: 0 }} animate={{ opacity: 1 }}
+              className="py-12 flex flex-col items-center gap-5 text-center"
+            >
+              <div className="w-16 h-16 rounded-2xl bg-white/5 flex items-center justify-center text-2xl border border-white/10 shadow-lg shadow-black/20">
                 🎉
               </div>
-              <div className="w-full border-4 border-dashed border-text/30 px-6 py-5">
-                <p className="font-black uppercase text-sm text-gray-500">
-                  No pending friend requests
-                </p>
-                <p className="font-medium text-xs text-gray-400 mt-1">
-                  When someone adds you, they'll appear here.
-                </p>
+              <div>
+                <p className="font-semibold text-white">No pending requests</p>
+                <p className="text-sm text-gray-400 mt-1">When someone adds you, they'll appear here.</p>
               </div>
-            </div>
+            </motion.div>
           )}
 
           {/* Request list */}
-          {!loading && !error && requests.map((req: any) => (
-            <div
-              key={req.id}
-              className="brutal-box bg-background flex items-center justify-between gap-3 p-3 sm:p-4"
-            >
-              {/* Avatar + name */}
-              <div className="flex items-center gap-3 min-w-0">
-                <div className="w-10 h-10 flex-shrink-0 bg-primary border-2 border-text flex items-center justify-center font-black text-base uppercase shadow-brutal">
-                  {req.requester.username.charAt(0)}
-                </div>
-                <span className="font-black text-base truncate">
-                  {req.requester.username}
-                </span>
-              </div>
-
-              {/* Accept button */}
-              <button
-                onClick={() => acceptRequest(req.id)}
-                className="brutal-btn bg-primary flex-shrink-0 px-4 py-2 text-xs sm:text-sm font-black uppercase"
+          <AnimatePresence>
+            {!loading && !error && requests.map((req: any) => (
+              <motion.div
+                key={req.id}
+                initial={{ opacity: 0, x: -20 }}
+                animate={{ opacity: 1, x: 0 }}
+                exit={{ opacity: 0, scale: 0.95 }}
+                className="flex items-center justify-between gap-4 p-4 rounded-2xl bg-white/5 border border-white/10 hover:bg-white/10 transition-all"
               >
-                ACCEPT
-              </button>
-            </div>
-          ))}
+                {/* Avatar + name */}
+                <div className="flex items-center gap-4 min-w-0">
+                  <div className="w-12 h-12 rounded-full bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center font-bold text-lg text-white shadow-lg flex-shrink-0">
+                    {req.requester.username.charAt(0).toUpperCase()}
+                  </div>
+                  <div className="flex flex-col min-w-0">
+                    <span className="font-semibold text-white truncate">
+                      {req.requester.username}
+                    </span>
+                    <span className="text-xs text-gray-400 truncate">Wants to connect</span>
+                  </div>
+                </div>
+
+                {/* Accept button */}
+                <button
+                  onClick={() => acceptRequest(req.id)}
+                  className="flex-shrink-0 px-4 py-2 bg-indigo-500 hover:bg-indigo-400 text-white rounded-xl text-sm font-semibold transition-all shadow-[0_0_15px_rgba(99,102,241,0.4)]"
+                >
+                  Accept
+                </button>
+              </motion.div>
+            ))}
+          </AnimatePresence>
         </div>
-      </div>
+      </motion.div>
     </div>
   );
 
-  // Render into document.body to escape any parent stacking contexts
   return createPortal(modal, document.body);
 }

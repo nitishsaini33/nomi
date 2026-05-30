@@ -3,18 +3,16 @@ import { useState, useEffect, useRef, useCallback, useMemo, memo } from 'react';
 import { api } from '@/lib/api';
 import { useChatStore, nextOptimisticId } from '@/store/chatStore';
 import { wsClient } from '@/lib/wsClient';
-import { Send, ArrowLeft } from 'lucide-react';
+import { Send, ArrowLeft, MoreVertical, Smile } from 'lucide-react';
 import { useRouter } from 'next/navigation';
+import { motion, AnimatePresence } from 'framer-motion';
 
-// ── Memoized timestamp formatter ──────────────────────────────────────────────
-// toLocaleTimeString is expensive (calls into ICU). Cache results per timestamp.
 const _timeCache = new Map<string, string>();
 function formatTime(timestamp: string): string {
   let cached = _timeCache.get(timestamp);
   if (!cached) {
     cached = new Date(timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
     _timeCache.set(timestamp, cached);
-    // Prevent unbounded growth
     if (_timeCache.size > 2000) {
       const first = _timeCache.keys().next().value;
       if (first) _timeCache.delete(first);
@@ -23,8 +21,6 @@ function formatTime(timestamp: string): string {
   return cached;
 }
 
-// ── Memoized Message Bubble ───────────────────────────────────────────────────
-// Prevents re-rendering ALL messages when only one changes (e.g., new message arrives)
 const MessageBubble = memo(function MessageBubble({
   msg,
   isMe,
@@ -47,82 +43,101 @@ const MessageBubble = memo(function MessageBubble({
   reactToMessage: (msgId: string, emoji: string) => void;
 }) {
   return (
-    <div className={`flex ${isMe ? 'justify-end' : 'justify-start'} group`}>
+    <motion.div 
+      initial={{ opacity: 0, y: 10, scale: 0.95 }}
+      animate={{ opacity: 1, y: 0, scale: 1 }}
+      transition={{ type: "spring", stiffness: 400, damping: 25 }}
+      className={`flex ${isMe ? 'justify-end' : 'justify-start'} group mb-4 relative`}
+    >
       <div
         className={[
-          'max-w-[80%] sm:max-w-[72%] px-3 py-2 font-bold border-2 border-text relative',
-          'shadow-brutal text-sm sm:text-base break-words',
-          isMe ? 'bg-primary transform rotate-1' : 'bg-white transform -rotate-1',
+          'max-w-[80%] sm:max-w-[70%] px-4 py-3 relative',
+          'text-sm sm:text-base break-words',
+          isMe 
+            ? 'msg-bubble-me rounded-2xl rounded-tr-sm' 
+            : 'msg-bubble-other rounded-2xl rounded-tl-sm',
           msg.is_deleted ? 'opacity-50 italic' : ''
         ].join(' ')}
       >
         {/* Action buttons (visible on hover) */}
-        <div className="absolute -top-3 -right-3 flex gap-1 hidden group-hover:flex z-10">
-          {/* Reaction Button */}
+        <div className={`absolute -top-3 ${isMe ? '-left-8' : '-right-8'} hidden group-hover:flex gap-1 z-10`}>
           {!msg.is_deleted && msg.id && (
             <div className="relative">
               <button 
-                className="bg-yellow-300 text-text w-6 h-6 border-2 border-text font-black text-xs flex items-center justify-center hover:scale-110 transition-transform shadow-sm" 
+                className="w-7 h-7 rounded-full bg-white/10 backdrop-blur-md border border-white/20 text-white flex items-center justify-center hover:bg-white/20 transition-all shadow-lg" 
                 title="React"
                 onClick={() => setOpenReactionMsgId(openReactionMsgId === msg.id ? null : msg.id)}
               >
-                +
+                <Smile size={14} />
               </button>
-              {openReactionMsgId === msg.id && (
-                <div className="absolute top-full right-0 mt-1 flex bg-white border-2 border-text shadow-brutal p-1 gap-1 flex-row z-20">
-                  {['👍', '❤️', '😂', '😮', '😢'].map(emoji => (
-                    <button key={emoji} onClick={() => reactToMessage(msg.id, emoji)} className="hover:scale-125 transition-transform">
-                      {emoji}
-                    </button>
-                  ))}
-                </div>
-              )}
+              <AnimatePresence>
+                {openReactionMsgId === msg.id && (
+                  <motion.div 
+                    initial={{ opacity: 0, scale: 0.8 }}
+                    animate={{ opacity: 1, scale: 1 }}
+                    exit={{ opacity: 0, scale: 0.8 }}
+                    className={`absolute bottom-full mb-2 ${isMe ? 'left-0' : 'right-0'} flex bg-black/40 backdrop-blur-xl border border-white/10 rounded-full p-1.5 gap-1 shadow-xl z-20`}
+                  >
+                    {['👍', '❤️', '😂', '😮', '😢'].map(emoji => (
+                      <button 
+                        key={emoji} 
+                        onClick={() => reactToMessage(msg.id, emoji)} 
+                        className="w-8 h-8 flex items-center justify-center hover:bg-white/20 rounded-full transition-all text-lg hover:scale-125"
+                      >
+                        {emoji}
+                      </button>
+                    ))}
+                  </motion.div>
+                )}
+              </AnimatePresence>
             </div>
           )}
           
-          {/* Delete button (only within 5 minutes) */}
           {canDelete && (
             <button
               onClick={() => deleteMessage(msg.id)}
-              className="bg-red-500 text-white w-6 h-6 border-2 border-text font-black text-xs flex items-center justify-center hover:scale-110 transition-transform shadow-sm"
-              title="Delete Message (5 min window)"
+              className="w-7 h-7 rounded-full bg-red-500/20 backdrop-blur-md border border-red-500/30 text-red-200 flex items-center justify-center hover:bg-red-500/40 transition-all shadow-lg text-xs font-bold"
+              title="Delete Message"
             >
-              X
+              ×
             </button>
           )}
         </div>
 
-        {msg.content}
+        <div className="leading-relaxed">{msg.content}</div>
         
         {/* Display Reactions */}
         {msg.reactions && msg.reactions.length > 0 && (
-          <div className="flex flex-wrap gap-1 mt-1">
+          <div className="flex flex-wrap gap-1 mt-2">
             {msg.reactions.map((r: any) => (
-              <span key={r.id} className="text-sm bg-white/50 px-1 border border-text/20 rounded-sm" title={r.user_id === currentUserId ? 'You' : otherUsername}>
+              <span 
+                key={r.id} 
+                className="text-xs bg-black/20 px-2 py-0.5 rounded-full border border-white/10 backdrop-blur-sm shadow-sm" 
+                title={r.user_id === currentUserId ? 'You' : otherUsername}
+              >
                 {r.emoji}
               </span>
             ))}
           </div>
         )}
         
-        <div className="flex items-center justify-end gap-1 mt-1 border-t border-text/20 pt-1">
+        <div className={`flex items-center gap-1.5 mt-1.5 ${isMe ? 'justify-end text-white/70' : 'justify-start text-white/50'}`}>
           {msg.is_edited && !msg.is_deleted && (
-            <span className="text-[9px] sm:text-[10px] font-black opacity-50 mr-1">(edited)</span>
+            <span className="text-[9px] font-medium">(edited)</span>
           )}
-          <div className="text-[9px] sm:text-[10px] font-black opacity-60 text-right">
+          <div className="text-[10px] font-medium">
             {formatTime(msg.timestamp)}
           </div>
-          {/* Read Receipts */}
           {isMe && (
-            <div className="text-[10px] font-black">
-              {msg.status === 'READ' ? <span className="text-blue-600">✓✓</span> : 
+            <div className="text-[10px] flex items-center ml-0.5">
+              {msg.status === 'READ' ? <span className="text-cyan-300">✓✓</span> : 
                msg.status === 'DELIVERED' ? <span>✓✓</span> : 
                <span className="opacity-60">✓</span>}
             </div>
           )}
         </div>
       </div>
-    </div>
+    </motion.div>
   );
 });
 
@@ -152,42 +167,32 @@ export default function ChatWindow({
   const [hasMore, setHasMore] = useState(true);
   const [openReactionMsgId, setOpenReactionMsgId] = useState<string | null>(null);
 
-  // Look up the other user from the store instead of fetching the entire friends list
   const otherUser = useMemo(
     () => friends.find((f: any) => f.id === otherUserId) || null,
     [friends, otherUserId]
   );
 
-  // Scroll refs
   const scrollRef = useRef<HTMLDivElement>(null);
   const bottomRef = useRef<HTMLDivElement>(null);
   const typingTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const lastScrollHeightRef = useRef<number>(0);
-  const isRestoringScrollRef = useRef(false); // true while loading older msgs
-  const hasScrolledToBottomRef = useRef(false); // has initial scroll fired for current chat
-  const prevUnreadIdsRef = useRef<Set<string>>(new Set()); // track sent read receipts
+  const isRestoringScrollRef = useRef(false);
+  const hasScrolledToBottomRef = useRef(false);
+  const prevUnreadIdsRef = useRef<Set<string>>(new Set());
   const router = useRouter();
 
   const chatMessages = messages[otherUserId] || [];
 
-  // ── Reset everything when switching chats ────────────────────────────────
   useEffect(() => {
     setActiveChatUserId(otherUserId);
     clearUnread(otherUserId);
-    hasScrolledToBottomRef.current = false; // reset so we scroll fresh
+    hasScrolledToBottomRef.current = false;
     prevUnreadIdsRef.current = new Set();
-
     fetchMessages();
-
-    return () => {
-      setActiveChatUserId(null);
-    };
+    return () => setActiveChatUserId(null);
   }, [otherUserId]);
 
-  // ── scrollToBottom helper ────────────────────────────────────────────────
   const scrollToBottom = useCallback((behavior: ScrollBehavior = 'instant') => {
-    // Use setTimeout(0) to push past React's render cycle AND the browser's
-    // layout recalculation, guaranteeing scrollHeight is final.
     setTimeout(() => {
       if (scrollRef.current) {
         scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
@@ -195,31 +200,22 @@ export default function ChatWindow({
     }, 0);
   }, []);
 
-  // ── Main scroll effect ───────────────────────────────────────────────────
   useEffect(() => {
     if (chatMessages.length === 0) return;
-
-    // Case 1: We just loaded older messages — restore scroll position, don't jump
     if (isRestoringScrollRef.current) {
       if (scrollRef.current) {
-        scrollRef.current.scrollTop =
-          scrollRef.current.scrollHeight - lastScrollHeightRef.current;
+        scrollRef.current.scrollTop = scrollRef.current.scrollHeight - lastScrollHeightRef.current;
       }
       isRestoringScrollRef.current = false;
       return;
     }
-
-    // Case 2: Initial open — always jump to bottom (once per chat switch)
     if (!hasScrolledToBottomRef.current) {
       if (scrollRef.current) {
-        // Container is mounted — scroll and mark as done
         scrollToBottom('instant');
         hasScrolledToBottomRef.current = true;
       }
       return;
     }
-
-    // Case 3: New message arrived — only auto-scroll if user is near bottom
     if (scrollRef.current) {
       const { scrollTop, scrollHeight, clientHeight } = scrollRef.current;
       const distanceFromBottom = scrollHeight - scrollTop - clientHeight;
@@ -229,7 +225,6 @@ export default function ChatWindow({
     }
   }, [chatMessages.length, otherUserId]);
 
-  // Also scroll when otherUser first loads (component transitions from loading → real UI)
   useEffect(() => {
     if (otherUser && !hasScrolledToBottomRef.current && chatMessages.length > 0) {
       scrollToBottom('instant');
@@ -237,15 +232,12 @@ export default function ChatWindow({
     }
   }, [otherUser]);
 
-  // ── Debounced read receipts ──────────────────────────────────────────────
-  // Only fire when NEW unread messages appear, not on every state change
   useEffect(() => {
     const unreadMsgIds = chatMessages
       .filter((m: any) => m.sender_id === otherUserId && m.status !== 'READ')
       .map((m: any) => m.id)
       .filter(Boolean);
     
-    // Only send for IDs we haven't already sent a receipt for
     const newUnread = unreadMsgIds.filter((id: string) => !prevUnreadIdsRef.current.has(id));
     if (newUnread.length > 0) {
       wsClient.sendReadReceipt(otherUserId, newUnread);
@@ -253,11 +245,10 @@ export default function ChatWindow({
     }
   }, [chatMessages, otherUserId]);
 
-  // ── Data fetching ────────────────────────────────────────────────────────
   const fetchMessages = async (cursor?: string) => {
     if (!cursor) setHasMore(true);
     try {
-      const url = `/chat/${otherUserId}?limit=50${cursor ? `&cursor=${encodeURIComponent(cursor)}` : ''}`;
+      const url = `/chat/${otherUserId}?limit=50${cursor ? \`&cursor=\${encodeURIComponent(cursor)}\` : ''}`;
       const data = await api.get(url);
       if (data.length < 50) setHasMore(false);
       setMessages(otherUserId, data);
@@ -279,7 +270,6 @@ export default function ChatWindow({
     }
   };
 
-  // ── Input / send ─────────────────────────────────────────────────────────
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setInput(e.target.value);
     wsClient.sendTyping(otherUserId, true);
@@ -339,53 +329,67 @@ export default function ChatWindow({
 
   const handleUnfriend = useCallback(async () => {
     if (!otherUser) return;
-    if (!confirm(`Are you sure you want to unfriend ${otherUser.username}? This will delete all chat history for both of you.`)) return;
+    if (!confirm(`Are you sure you want to unfriend ${otherUser.username}? This will delete all chat history.`)) return;
     try {
       await api.delete(`/users/friends/${otherUserId}`);
-      removeFriendData(otherUserId); // Wipe from local cache immediately
+      removeFriendData(otherUserId);
       router.push('/dashboard');
     } catch (e) {
       console.error('Failed to unfriend', e);
     }
   }, [otherUserId, otherUser, router, removeFriendData]);
 
-  // ── Render ───────────────────────────────────────────────────────────────
   if (!otherUser) {
     return (
-      <div className="flex-1 flex items-center justify-center font-black text-lg sm:text-2xl uppercase p-8 animate-pulse">
-        Loading chat...
+      <div className="flex-1 flex items-center justify-center font-bold text-gray-400 p-8">
+        <div className="flex flex-col items-center gap-4">
+          <div className="w-8 h-8 border-2 border-indigo-500/30 border-t-indigo-500 rounded-full animate-spin" />
+          <span>Connecting...</span>
+        </div>
       </div>
     );
   }
 
   return (
-    <div className="flex flex-col h-full bg-white">
+    <div className="flex flex-col h-full bg-transparent text-white relative">
       {/* ── Header ── */}
-      <div className="flex-shrink-0 flex items-center gap-2 sm:gap-4 px-3 sm:px-4 py-3 border-b-4 border-text bg-background">
+      <div className="flex-shrink-0 flex items-center gap-3 px-4 sm:px-6 py-4 border-b border-white/5 bg-white/5 backdrop-blur-md z-10 shadow-sm">
         <button
           onClick={() => router.push('/dashboard')}
-          className="md:hidden p-2 bg-white border-2 border-text shadow-brutal hover:bg-primary transition-colors flex-shrink-0"
-          aria-label="Back to contacts"
+          className="md:hidden p-2 rounded-xl bg-white/5 hover:bg-white/10 transition-colors flex-shrink-0 border border-white/10"
         >
           <ArrowLeft size={18} />
         </button>
-        <div className="flex flex-col flex-1 truncate">
-          <div className="flex items-center gap-2">
-            <div className="font-black text-base sm:text-xl md:text-2xl uppercase bg-text text-white px-2 sm:px-3 py-1 transform -rotate-1 truncate">
-              {otherUser.username}
-            </div>
-            {onlineUsers[otherUserId] && (
-              <div className="w-3 h-3 bg-green-500 rounded-full border-2 border-text animate-pulse" title="Online" />
+        
+        {/* Avatar */}
+        <div className="relative flex-shrink-0">
+          <div className="w-10 h-10 rounded-full bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center font-bold text-white shadow-lg">
+            {otherUser.username.charAt(0).toUpperCase()}
+          </div>
+          {onlineUsers[otherUserId] && (
+            <div className="absolute bottom-0 right-0 w-3 h-3 bg-cyan-400 rounded-full border-2 border-[#0B0F19] shadow-[0_0_8px_rgba(6,182,212,0.6)]" />
+          )}
+        </div>
+
+        <div className="flex flex-col flex-1 min-w-0">
+          <div className="font-semibold text-base sm:text-lg text-white truncate">
+            {otherUser.username}
+          </div>
+          <div className="text-xs text-gray-400">
+            {onlineUsers[otherUserId] ? (
+              <span className="text-cyan-400 font-medium">Online</span>
+            ) : (
+              <span>Offline</span>
             )}
           </div>
         </div>
         
         <button
           onClick={handleUnfriend}
-          className="bg-red-500 text-white font-black px-2 py-1 text-xs sm:text-sm border-2 border-text shadow-brutal hover:bg-red-600 transition-colors transform rotate-1"
-          title="Unfriend and delete chat"
+          className="p-2 rounded-xl bg-red-500/10 hover:bg-red-500/20 text-red-400 border border-red-500/20 transition-all flex-shrink-0"
+          title="Unfriend User"
         >
-          UNFRIEND
+          <MoreVertical size={18} />
         </button>
       </div>
 
@@ -393,11 +397,14 @@ export default function ChatWindow({
       <div
         ref={scrollRef}
         onScroll={handleScroll}
-        className="flex-1 overflow-y-auto p-3 sm:p-4 space-y-3 sm:space-y-4 bg-[url('data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIyMCIgaGVpZ2h0PSIyMCI+PGNpcmNsZSBjeD0iMiIgY3k9IjIiIHI9IjIiIGZpbGw9IiNjY2MiIG9wYWNpdHk9IjAuNSIvPjwvc3ZnPg==')] bg-repeat"
-        style={{ overflowAnchor: 'none' }}
+        className="flex-1 overflow-y-auto p-4 sm:p-6 no-scrollbar relative z-0"
       >
         {isLoadingMore && (
-          <div className="text-center font-bold text-xs opacity-50 py-2">Loading older messages...</div>
+          <div className="flex justify-center py-2">
+            <div className="bg-black/20 backdrop-blur-md px-3 py-1 rounded-full border border-white/10 text-xs text-gray-400">
+              Loading history...
+            </div>
+          </div>
         )}
         
         {chatMessages.map((msg: any, i: number) => {
@@ -421,49 +428,64 @@ export default function ChatWindow({
         })}
 
         {chatMessages.length === 0 && (
-          <div className="text-center font-bold mt-8 sm:mt-10 p-4 sm:p-6 brutal-box bg-white mx-auto max-w-xs sm:max-w-sm text-sm sm:text-base transform rotate-2">
-            NO MESSAGES YET.
-            <br />
-            START SHOUTING!
-          </div>
+          <motion.div 
+            initial={{ opacity: 0, scale: 0.9 }}
+            animate={{ opacity: 1, scale: 1 }}
+            className="flex flex-col items-center justify-center h-full text-center p-6 mt-10"
+          >
+            <div className="w-16 h-16 rounded-full bg-white/5 flex items-center justify-center mb-4 border border-white/10">
+              <Smile size={24} className="text-indigo-400" />
+            </div>
+            <h3 className="text-lg font-semibold text-white mb-1">Say Hello!</h3>
+            <p className="text-sm text-gray-400">Send the first message to start the conversation.</p>
+          </motion.div>
         )}
         
         {/* ── Typing Indicator ── */}
-        {typingUsers[otherUserId] && (
-          <div className="flex justify-start">
-            <div className="px-4 py-2 font-black border-2 border-text shadow-brutal text-sm bg-accent transform -rotate-1 flex items-center gap-1">
-              <span className="animate-bounce" style={{ animationDelay: '0ms' }}>.</span>
-              <span className="animate-bounce" style={{ animationDelay: '150ms' }}>.</span>
-              <span className="animate-bounce" style={{ animationDelay: '300ms' }}>.</span>
-            </div>
-          </div>
-        )}
+        <AnimatePresence>
+          {typingUsers[otherUserId] && (
+            <motion.div 
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.9 }}
+              className="flex justify-start mb-4"
+            >
+              <div className="bg-white/5 backdrop-blur-md border border-white/10 rounded-2xl rounded-tl-sm px-4 py-3 flex items-center gap-1.5 shadow-sm">
+                <span className="w-1.5 h-1.5 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: '0ms' }} />
+                <span className="w-1.5 h-1.5 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: '150ms' }} />
+                <span className="w-1.5 h-1.5 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: '300ms' }} />
+              </div>
+            </motion.div>
+          )}
+        </AnimatePresence>
 
-        {/* Invisible scroll anchor at the very bottom */}
         <div ref={bottomRef} style={{ height: 1 }} />
       </div>
 
-      {/* ── Input ── */}
-      <form
-        onSubmit={sendMessage}
-        className="flex-shrink-0 flex gap-2 sm:gap-3 px-3 sm:px-4 py-3 border-t-4 border-text bg-background"
-      >
-        <input
-          type="text"
-          value={input}
-          onChange={handleInputChange}
-          placeholder="TYPE SOMETHING LOUD..."
-          className="brutal-input flex-1 font-bold text-sm sm:text-base py-2 sm:py-3"
-          autoComplete="off"
-        />
-        <button
-          type="submit"
-          className="brutal-btn p-2 sm:p-3 bg-primary flex-shrink-0"
-          aria-label="Send message"
+      {/* ── Input Area ── */}
+      <div className="flex-shrink-0 p-4 sm:p-6 bg-gradient-to-t from-[#0B0F19] to-transparent z-10">
+        <form
+          onSubmit={sendMessage}
+          className="flex gap-2 sm:gap-3 bg-black/40 backdrop-blur-xl border border-white/10 rounded-2xl p-1.5 shadow-[0_8px_32px_rgba(0,0,0,0.3)]"
         >
-          <Send size={20} />
-        </button>
-      </form>
+          <input
+            type="text"
+            value={input}
+            onChange={handleInputChange}
+            placeholder="Type a message..."
+            className="flex-1 bg-transparent text-white px-4 py-2 text-sm sm:text-base outline-none placeholder-gray-500"
+            autoComplete="off"
+          />
+          <button
+            type="submit"
+            disabled={!input.trim()}
+            className="p-3 bg-indigo-500 hover:bg-indigo-400 disabled:bg-white/10 disabled:text-gray-500 text-white rounded-xl transition-all shadow-md flex-shrink-0"
+            aria-label="Send message"
+          >
+            <Send size={18} />
+          </button>
+        </form>
+      </div>
     </div>
   );
 }

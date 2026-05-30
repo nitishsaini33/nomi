@@ -4,6 +4,7 @@ import { useRouter } from 'next/navigation';
 import { api } from '@/lib/api';
 import { useChatStore } from '@/store/chatStore';
 import Link from 'next/link';
+import { motion } from 'framer-motion';
 
 export default function Login() {
   const [identifier, setIdentifier] = useState(''); // username or email
@@ -22,7 +23,6 @@ export default function Login() {
     setLoading(true);
     setError('');
     try {
-      // Send as JSON — backend auto-detects username vs email
       const res = await api.post('/auth/login', {
         identifier: identifier.trim(),
         password,
@@ -40,48 +40,56 @@ export default function Login() {
   };
 
   return (
-    <div className="min-h-dvh flex items-center justify-center bg-background p-4 relative overflow-hidden">
-      <div className="hidden sm:block absolute top-1/4 left-10 w-full h-10 bg-primary opacity-40 transform -rotate-45 pointer-events-none" />
-
-      <div className="relative z-10 brutal-box p-6 sm:p-8 w-full max-w-md bg-white">
-        <h2 className="text-3xl sm:text-4xl font-black mb-6 uppercase bg-primary text-text inline-block px-2 sm:px-3 py-1 transform -rotate-2">
-          Login
-        </h2>
+    <div className="min-h-dvh flex items-center justify-center p-4 relative overflow-hidden">
+      <motion.div 
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.5, ease: "easeOut" }}
+        className="relative z-10 glass-panel p-8 sm:p-10 w-full max-w-md rounded-3xl"
+      >
+        <div className="text-center mb-8">
+          <h2 className="text-3xl sm:text-4xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-indigo-400 to-purple-400 mb-2">
+            Welcome Back
+          </h2>
+          <p className="text-sm text-gray-400">Sign in to continue your conversations</p>
+        </div>
 
         {error && (
-          <div className="bg-red-500 text-white p-3 mb-5 font-bold border-2 border-text text-sm sm:text-base transform rotate-1">
+          <motion.div 
+            initial={{ opacity: 0, scale: 0.95 }}
+            animate={{ opacity: 1, scale: 1 }}
+            className="bg-red-500/20 border border-red-500/50 text-red-200 p-3 mb-6 rounded-xl text-sm text-center backdrop-blur-md"
+          >
             {error}
-          </div>
+          </motion.div>
         )}
 
-        <form onSubmit={handleLogin} className="space-y-5">
-          {/* Username or Email */}
-          <div className="flex flex-col gap-1.5">
-            <label className="font-black text-base sm:text-lg uppercase tracking-wide">
+        <form onSubmit={handleLogin} className="space-y-6">
+          <div className="flex flex-col gap-2">
+            <label className="text-sm font-medium text-gray-300 ml-1">
               Username or Email
             </label>
             <input
               type="text"
-              className="brutal-input text-base sm:text-lg"
+              className="glass-input"
               value={identifier}
               onChange={(e) => setIdentifier(e.target.value)}
               placeholder="Enter username or email"
               required
               autoComplete="username"
             />
-            <span className="text-[11px] font-bold text-text/50">You can log in with either your username or email.</span>
           </div>
 
-          {/* Password */}
           <div className="flex flex-col gap-2">
-            <label className="font-black text-base sm:text-lg uppercase tracking-wide">
+            <label className="text-sm font-medium text-gray-300 ml-1">
               Password
             </label>
             <input
               type="password"
-              className="brutal-input text-base sm:text-lg"
+              className="glass-input"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
+              placeholder="Enter your password"
               required
               autoComplete="current-password"
             />
@@ -90,22 +98,27 @@ export default function Login() {
           <button
             type="submit"
             disabled={loading}
-            className="brutal-btn w-full text-lg sm:text-xl py-3 sm:py-4 bg-primary mt-2 disabled:opacity-60 disabled:cursor-not-allowed"
+            className="glass-button w-full py-3.5 text-base mt-4 disabled:opacity-60 disabled:cursor-not-allowed"
           >
-            {loading ? 'LOGGING IN...' : 'ENTER'}
+            {loading ? (
+              <span className="flex items-center gap-2">
+                <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                Signing In...
+              </span>
+            ) : 'Sign In'}
           </button>
         </form>
 
-        <div className="mt-6 font-bold text-center text-sm sm:text-base">
-          NO ACCOUNT?{' '}
+        <div className="mt-8 text-center text-sm text-gray-400">
+          Don't have an account?{' '}
           <Link
             href="/register"
-            className="text-primary underline decoration-4 underline-offset-4 hover:bg-text hover:text-white transition-colors px-1"
+            className="text-indigo-400 font-medium hover:text-indigo-300 transition-colors"
           >
-            REGISTER HERE
+            Create one
           </Link>
         </div>
-      </div>
+      </motion.div>
     </div>
   );
 }

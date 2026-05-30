@@ -4,6 +4,7 @@ import { useRouter } from 'next/navigation';
 import { api } from '@/lib/api';
 import Link from 'next/link';
 import { ArrowLeft } from 'lucide-react';
+import { motion, AnimatePresence } from 'framer-motion';
 
 function validateEmail(email: string) {
   return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
@@ -87,158 +88,189 @@ export default function Register() {
   };
 
   return (
-    <div className="min-h-dvh flex items-center justify-center bg-background p-4 relative overflow-hidden">
-      <div className="hidden sm:block absolute top-1/4 right-10 w-full h-10 bg-text opacity-10 transform rotate-45 pointer-events-none" />
-
-      <div className="relative z-10 brutal-box p-6 sm:p-8 w-full max-w-md bg-white">
-        
+    <div className="min-h-dvh flex items-center justify-center p-4 relative overflow-hidden">
+      <motion.div 
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.5, ease: "easeOut" }}
+        className="relative z-10 glass-panel p-8 sm:p-10 w-full max-w-md rounded-3xl"
+      >
         {step === 2 && (
           <button 
             onClick={() => { setStep(1); setError(''); setSuccess(''); }}
-            className="mb-4 flex items-center gap-1 text-sm font-bold border-2 border-text px-2 py-1 hover:bg-text hover:text-white transition-colors"
+            className="mb-6 flex items-center gap-1 text-sm font-medium text-gray-400 hover:text-white transition-colors"
           >
             <ArrowLeft size={16} /> Back
           </button>
         )}
 
-        <h2 className="text-3xl sm:text-4xl font-black mb-6 uppercase bg-text text-white inline-block px-2 sm:px-3 py-1 transform rotate-2">
-          {step === 1 ? 'Register' : 'Verify Email'}
-        </h2>
+        <div className="text-center mb-8">
+          <h2 className="text-3xl sm:text-4xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-indigo-400 to-purple-400 mb-2">
+            {step === 1 ? 'Create Account' : 'Verify Email'}
+          </h2>
+          <p className="text-sm text-gray-400">
+            {step === 1 ? 'Join the next-gen chat experience' : 'Almost there!'}
+          </p>
+        </div>
 
-        {error && (
-          <div className="bg-red-500 text-white p-3 mb-5 font-bold border-2 border-text text-sm sm:text-base transform -rotate-1">
-            {error}
-          </div>
-        )}
-        {success && (
-          <div className="bg-green-500 text-white p-3 mb-5 font-bold border-2 border-text text-sm sm:text-base transform rotate-1">
-            {success}
-          </div>
-        )}
-
-        {step === 1 ? (
-          <form onSubmit={handleSendOTP} className="space-y-4">
-            {/* Username */}
-            <div className="flex flex-col gap-1.5">
-              <label className="font-black text-sm sm:text-base uppercase tracking-wide">
-                Username
-              </label>
-              <input
-                type="text"
-                className="brutal-input text-base sm:text-lg"
-                value={username}
-                onChange={(e) => setUsername(e.target.value)}
-                placeholder="e.g. john_doe"
-                required
-                autoComplete="username"
-                minLength={3}
-                maxLength={30}
-              />
-              <span className="text-[11px] font-bold text-text/50">Letters, numbers and underscores only.</span>
-            </div>
-
-            {/* Email */}
-            <div className="flex flex-col gap-1.5">
-              <label className="font-black text-sm sm:text-base uppercase tracking-wide">
-                Email
-              </label>
-              <input
-                type="email"
-                className="brutal-input text-base sm:text-lg"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                placeholder="e.g. john@example.com"
-                required
-                autoComplete="email"
-              />
-            </div>
-
-            {/* Password */}
-            <div className="flex flex-col gap-1.5">
-              <label className="font-black text-sm sm:text-base uppercase tracking-wide">
-                Password
-              </label>
-              <input
-                type="password"
-                className="brutal-input text-base sm:text-lg"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                placeholder="Min. 6 characters"
-                required
-                autoComplete="new-password"
-                minLength={6}
-              />
-            </div>
-
-            {/* Confirm Password */}
-            <div className="flex flex-col gap-1.5">
-              <label className="font-black text-sm sm:text-base uppercase tracking-wide">
-                Confirm Password
-              </label>
-              <input
-                type="password"
-                className="brutal-input text-base sm:text-lg"
-                value={confirmPassword}
-                onChange={(e) => setConfirmPassword(e.target.value)}
-                placeholder="Repeat your password"
-                required
-                autoComplete="new-password"
-                minLength={6}
-              />
-            </div>
-
-            <button
-              type="submit"
-              disabled={loading}
-              className="brutal-btn w-full text-lg sm:text-xl py-3 sm:py-4 bg-primary mt-2 disabled:opacity-60 disabled:cursor-not-allowed"
+        <AnimatePresence mode="wait">
+          {error && (
+            <motion.div 
+              key="error"
+              initial={{ opacity: 0, height: 0 }}
+              animate={{ opacity: 1, height: 'auto' }}
+              exit={{ opacity: 0, height: 0 }}
+              className="bg-red-500/20 border border-red-500/50 text-red-200 p-3 mb-6 rounded-xl text-sm text-center backdrop-blur-md"
             >
-              {loading ? 'SENDING CODE...' : 'CONTINUE'}
-            </button>
-          </form>
-        ) : (
-          <form onSubmit={handleVerifyOTP} className="space-y-4">
-            <p className="font-bold text-sm sm:text-base mb-4">
-              We've sent a 6-digit code to <span className="bg-primary px-1">{email}</span>. 
-              Please enter it below to verify your account.
-            </p>
-
-            <div className="flex flex-col gap-1.5">
-              <label className="font-black text-sm sm:text-base uppercase tracking-wide">
-                Verification Code
-              </label>
-              <input
-                type="text"
-                className="brutal-input text-2xl sm:text-3xl tracking-[10px] text-center font-black py-4"
-                value={otp}
-                onChange={(e) => setOtp(e.target.value.replace(/[^0-9]/g, ''))}
-                placeholder="000000"
-                maxLength={6}
-                required
-                autoComplete="one-time-code"
-              />
-              <span className="text-[11px] font-bold text-text/50 text-center">Code expires in 10 minutes.</span>
-            </div>
-
-            <button
-              type="submit"
-              disabled={loading || otp.length !== 6}
-              className="brutal-btn w-full text-lg sm:text-xl py-3 sm:py-4 bg-green-400 mt-2 disabled:opacity-60 disabled:cursor-not-allowed"
+              {error}
+            </motion.div>
+          )}
+          {success && (
+            <motion.div 
+              key="success"
+              initial={{ opacity: 0, height: 0 }}
+              animate={{ opacity: 1, height: 'auto' }}
+              exit={{ opacity: 0, height: 0 }}
+              className="bg-emerald-500/20 border border-emerald-500/50 text-emerald-200 p-3 mb-6 rounded-xl text-sm text-center backdrop-blur-md"
             >
-              {loading ? 'VERIFYING...' : 'VERIFY & CREATE ACCOUNT'}
-            </button>
-          </form>
-        )}
+              {success}
+            </motion.div>
+          )}
+        </AnimatePresence>
 
-        <div className="mt-6 font-bold text-center text-sm sm:text-base">
-          ALREADY HAVE AN ACCOUNT?{' '}
+        <AnimatePresence mode="wait">
+          {step === 1 ? (
+            <motion.form 
+              key="step1"
+              initial={{ opacity: 0, x: -20 }}
+              animate={{ opacity: 1, x: 0 }}
+              exit={{ opacity: 0, x: 20 }}
+              onSubmit={handleSendOTP} 
+              className="space-y-4"
+            >
+              <div className="flex flex-col gap-2">
+                <label className="text-sm font-medium text-gray-300 ml-1">Username</label>
+                <input
+                  type="text"
+                  className="glass-input"
+                  value={username}
+                  onChange={(e) => setUsername(e.target.value)}
+                  placeholder="e.g. john_doe"
+                  required
+                  autoComplete="username"
+                  minLength={3}
+                  maxLength={30}
+                />
+              </div>
+
+              <div className="flex flex-col gap-2">
+                <label className="text-sm font-medium text-gray-300 ml-1">Email</label>
+                <input
+                  type="email"
+                  className="glass-input"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  placeholder="e.g. john@example.com"
+                  required
+                  autoComplete="email"
+                />
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div className="flex flex-col gap-2">
+                  <label className="text-sm font-medium text-gray-300 ml-1">Password</label>
+                  <input
+                    type="password"
+                    className="glass-input"
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                    placeholder="Min 6 chars"
+                    required
+                    autoComplete="new-password"
+                    minLength={6}
+                  />
+                </div>
+                <div className="flex flex-col gap-2">
+                  <label className="text-sm font-medium text-gray-300 ml-1">Confirm</label>
+                  <input
+                    type="password"
+                    className="glass-input"
+                    value={confirmPassword}
+                    onChange={(e) => setConfirmPassword(e.target.value)}
+                    placeholder="Repeat"
+                    required
+                    autoComplete="new-password"
+                    minLength={6}
+                  />
+                </div>
+              </div>
+
+              <button
+                type="submit"
+                disabled={loading}
+                className="glass-button w-full py-3.5 text-base mt-6 disabled:opacity-60 disabled:cursor-not-allowed"
+              >
+                {loading ? (
+                  <span className="flex items-center gap-2">
+                    <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                    Sending Code...
+                  </span>
+                ) : 'Continue'}
+              </button>
+            </motion.form>
+          ) : (
+            <motion.form 
+              key="step2"
+              initial={{ opacity: 0, x: 20 }}
+              animate={{ opacity: 1, x: 0 }}
+              exit={{ opacity: 0, x: -20 }}
+              onSubmit={handleVerifyOTP} 
+              className="space-y-6"
+            >
+              <p className="text-sm text-gray-300 text-center leading-relaxed">
+                We've sent a 6-digit code to <span className="text-indigo-400 font-medium">{email}</span>.<br/>
+                Please enter it below.
+              </p>
+
+              <div className="flex flex-col gap-2 mt-4">
+                <input
+                  type="text"
+                  className="glass-input text-3xl tracking-[0.5em] text-center font-bold py-4 bg-black/40"
+                  value={otp}
+                  onChange={(e) => setOtp(e.target.value.replace(/[^0-9]/g, ''))}
+                  placeholder="000000"
+                  maxLength={6}
+                  required
+                  autoComplete="one-time-code"
+                />
+              </div>
+
+              <button
+                type="submit"
+                disabled={loading || otp.length !== 6}
+                className="glass-button w-full py-3.5 text-base mt-4 !from-emerald-500 !to-teal-600 hover:!from-emerald-400 hover:!to-teal-500 disabled:opacity-60 disabled:cursor-not-allowed"
+              >
+                {loading ? (
+                  <span className="flex items-center gap-2">
+                    <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                    Verifying...
+                  </span>
+                ) : 'Verify & Create Account'}
+              </button>
+            </motion.form>
+          )}
+        </AnimatePresence>
+
+        <div className="mt-8 text-center text-sm text-gray-400">
+          Already have an account?{' '}
           <Link
             href="/login"
-            className="text-primary underline decoration-4 underline-offset-4 hover:bg-text hover:text-white transition-colors px-1"
+            className="text-indigo-400 font-medium hover:text-indigo-300 transition-colors"
           >
-            LOGIN
+            Sign in
           </Link>
         </div>
-      </div>
+      </motion.div>
     </div>
   );
 }

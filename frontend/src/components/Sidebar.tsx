@@ -1,12 +1,12 @@
 'use client'
-import { useState, useEffect, useMemo, memo, useCallback } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { api } from '@/lib/api';
 import { UserPlus, Search, LogOut, Trash2 } from 'lucide-react';
 import RequestModal from './RequestModal';
 import { useRouter } from 'next/navigation';
 import { useChatStore } from '@/store/chatStore';
 
-/** Returns a compact relative time string, e.g. "2m", "3h", "Yesterday", "May 25" */
+/** Returns a compact relative time string */
 function timeAgo(epochMs: number): string {
   const diff = Date.now() - epochMs;
   const mins  = Math.floor(diff / 60_000);
@@ -27,7 +27,6 @@ export default function Sidebar({ user }: { user: any }) {
   const router = useRouter();
 
   const { 
-    setCurrentUser, 
     unreadCounts, 
     lastMessageTimes, 
     setLastMessageTime, 
@@ -41,8 +40,6 @@ export default function Sidebar({ user }: { user: any }) {
     fetchFriends();
     fetchRequestCount();
     fetchPreviews();
-
-    // Poll for new friend requests every 30 seconds
     const interval = setInterval(fetchRequestCount, 30_000);
     return () => clearInterval(interval);
   }, [sidebarRefreshKey]);
@@ -56,14 +53,12 @@ export default function Sidebar({ user }: { user: any }) {
     }
   };
 
-  /** Seed lastMessageTimes from the server so sort order is correct on first load */
   const fetchPreviews = async () => {
     try {
-      const previews: { friend_id: string; last_timestamp: string }[] =
-        await api.get('/chat/previews');
+      const previews: { friend_id: string; last_timestamp: string }[] = await api.get('/chat/previews');
       previews.forEach((p) => setLastMessageTime(p.friend_id, p.last_timestamp));
     } catch (e) {
-      // Non-critical — sidebar just shows unsorted friends
+      // ignore
     }
   };
 
@@ -72,7 +67,7 @@ export default function Sidebar({ user }: { user: any }) {
       const data = await api.get('/users/requests');
       setPendingRequestCount(data.length);
     } catch (e) {
-      // silently ignore
+      // ignore
     }
   };
 
@@ -99,17 +94,15 @@ export default function Sidebar({ user }: { user: any }) {
 
   const handleLogout = () => {
     localStorage.removeItem('token');
-    useChatStore.getState().clearStore(); // Completely wipe the cache
+    useChatStore.getState().clearStore();
     router.push('/login');
   };
 
   const handleDeleteAccount = async () => {
     const confirm1 = confirm("Are you sure you want to delete your account? This action cannot be undone.");
     if (!confirm1) return;
-    
     const confirm2 = confirm("WARNING: This will permanently delete ALL your messages, friends, and data. Type OK to proceed.");
     if (!confirm2) return;
-
     try {
       await api.delete('/users/me');
       alert('Account deleted successfully.');
@@ -119,63 +112,41 @@ export default function Sidebar({ user }: { user: any }) {
     }
   };
 
-  /**
-   * Sort friends list:
-   * 1. Friends with unread messages come first (most unread → top)
-   * 2. Then sorted by last message time, most recent first
-   * 3. Friends with no messages ever go to the bottom
-   */
   const sortedFriends = useMemo(() => {
     return [...friends].sort((a, b) => {
       const unreadA = unreadCounts[a.id] || 0;
       const unreadB = unreadCounts[b.id] || 0;
       const timeA   = lastMessageTimes[a.id] || 0;
       const timeB   = lastMessageTimes[b.id] || 0;
-
-      // Unread first
       if (unreadA > 0 && unreadB === 0) return -1;
       if (unreadA === 0 && unreadB > 0) return 1;
-
-      // Same unread tier → most recent message first
       return timeB - timeA;
     });
   }, [friends, unreadCounts, lastMessageTimes]);
 
   return (
-    <div className="h-full bg-white border-2 border-text shadow-brutal flex flex-col overflow-hidden">
-
+    <div className="h-full flex flex-col bg-transparent text-white w-full">
       {/* ── Header ── */}
-      <div className="flex-shrink-0 flex justify-between items-center px-3 sm:px-4 py-3 border-b-4 border-text bg-background">
+      <div className="flex-shrink-0 flex justify-between items-center px-4 sm:px-6 py-4 border-b border-white/5 bg-white/5 backdrop-blur-sm">
         <button
           onClick={() => router.push('/dashboard')}
-          className="font-black text-sm sm:text-base md:text-lg uppercase bg-primary text-text px-2 py-1 transform -rotate-1 truncate max-w-[55%] hover:bg-text hover:text-white transition-colors cursor-pointer"
+          className="font-bold text-lg md:text-xl truncate max-w-[55%] hover:text-indigo-400 transition-colors cursor-pointer"
           title="Go to Dashboard"
         >
           {user.username}
         </button>
-        <div className="flex gap-1 sm:gap-2">
+        <div className="flex gap-2">
           <button
             onClick={() => {
               setIsModalOpen(true);
-              setPendingRequestCount(0); // clear badge immediately on open
+              setPendingRequestCount(0);
             }}
-            title={`Friend Requests${pendingRequestCount > 0 ? ` (${pendingRequestCount})` : ''}`}
-            className="relative p-2 bg-text text-white border-2 border-text hover:bg-primary hover:text-text transition-colors"
+            title="Friend Requests"
+            className="relative p-2 rounded-xl bg-white/5 hover:bg-white/10 border border-white/10 hover:border-indigo-500/50 hover:text-indigo-400 transition-all"
           >
-            <UserPlus size={16} />
-
-            {/* Pending request badge */}
+            <UserPlus size={18} />
             {pendingRequestCount > 0 && (
-              <span
-                className="
-                  absolute -top-2 -right-2
-                  min-w-[18px] h-[18px] px-0.5
-                  bg-primary border-2 border-text
-                  font-black text-[9px] leading-none
-                  flex items-center justify-center
-                  animate-pulse
-                "
-              >
+              <span className="absolute -top-1 -right-1 min-w-[18px] h-[18px] bg-indigo-500 rounded-full font-bold text-[10px] flex items-center justify-center border border-indigo-400 shadow-[0_0_10px_rgba(99,102,241,0.5)]">
                 {pendingRequestCount > 9 ? '9+' : pendingRequestCount}
               </span>
             )}
@@ -183,69 +154,71 @@ export default function Sidebar({ user }: { user: any }) {
           <button
             onClick={handleDeleteAccount}
             title="Delete Account"
-            className="p-2 bg-background border-2 border-text text-red-500 hover:bg-red-500 hover:text-white transition-colors"
+            className="p-2 rounded-xl bg-white/5 hover:bg-red-500/20 border border-white/10 hover:border-red-500/50 hover:text-red-400 transition-all"
           >
-            <Trash2 size={16} />
+            <Trash2 size={18} />
           </button>
           <button
             onClick={handleLogout}
             title="Logout"
-            className="p-2 bg-background border-2 border-text hover:bg-text hover:text-white transition-colors"
+            className="p-2 rounded-xl bg-white/5 hover:bg-white/10 border border-white/10 hover:border-white/20 transition-all"
           >
-            <LogOut size={16} />
+            <LogOut size={18} />
           </button>
         </div>
       </div>
 
       {/* ── Search ── */}
-      <div className="flex-shrink-0 px-3 sm:px-4 py-3 border-b-2 border-text/20">
-        <form onSubmit={handleSearch} className="flex gap-2">
+      <div className="flex-shrink-0 px-4 sm:px-6 py-4">
+        <form onSubmit={handleSearch} className="relative">
+          <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+            <Search size={16} className="text-gray-400" />
+          </div>
           <input
             type="text"
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            placeholder="SEARCH USERS"
-            className="brutal-input flex-1 text-xs sm:text-sm py-2"
+            placeholder="Search users..."
+            className="glass-input pl-10 text-sm py-2.5 rounded-full"
           />
-          <button type="submit" className="brutal-btn px-3 py-2 bg-primary flex-shrink-0">
-            <Search size={16} />
-          </button>
         </form>
       </div>
 
       {/* ── Search Results ── */}
       {searchResults.length > 0 && (
-        <div className="flex-shrink-0 border-b-2 border-text bg-background max-h-40 overflow-y-auto">
-          <div className="flex justify-between items-center px-3 sm:px-4 pt-2 pb-1">
-            <span className="font-black text-xs uppercase">Results</span>
+        <div className="flex-shrink-0 mx-4 sm:mx-6 mb-4 rounded-xl bg-white/5 border border-white/10 overflow-hidden backdrop-blur-md">
+          <div className="flex justify-between items-center px-4 py-2 border-b border-white/5 bg-white/5">
+            <span className="text-xs font-semibold text-gray-400 uppercase tracking-wider">Results</span>
             <button
               onClick={() => setSearchResults([])}
-              className="text-xs font-bold underline hover:text-primary"
+              className="text-xs font-medium text-indigo-400 hover:text-indigo-300"
             >
               Clear
             </button>
           </div>
-          {searchResults.map((r: any) => (
-            <div key={r.id} className="flex justify-between items-center px-3 sm:px-4 py-2 border-t border-text/20">
-              <span className="font-bold text-sm truncate flex-1 mr-2">{r.username}</span>
-              <button
-                onClick={() => sendRequest(r.id)}
-                className="px-2 py-1 bg-primary border-2 border-text text-xs font-bold uppercase hover:bg-text hover:text-white transition-colors flex-shrink-0"
-              >
-                Add
-              </button>
-            </div>
-          ))}
+          <div className="max-h-40 overflow-y-auto no-scrollbar">
+            {searchResults.map((r: any) => (
+              <div key={r.id} className="flex justify-between items-center px-4 py-3 border-b border-white/5 last:border-0 hover:bg-white/5 transition-colors">
+                <span className="font-medium text-sm truncate flex-1 mr-2">{r.username}</span>
+                <button
+                  onClick={() => sendRequest(r.id)}
+                  className="px-3 py-1.5 rounded-lg bg-indigo-500/20 text-indigo-300 hover:bg-indigo-500 hover:text-white border border-indigo-500/30 transition-all text-xs font-medium"
+                >
+                  Add
+                </button>
+              </div>
+            ))}
+          </div>
         </div>
       )}
 
       {/* ── Friends List ── */}
-      <div className="flex-1 overflow-y-auto px-3 sm:px-4 py-3">
-        <div className="font-black text-sm sm:text-base uppercase bg-text text-white inline-block px-3 py-1 transform rotate-1 mb-3">
-          Friends
+      <div className="flex-1 overflow-y-auto no-scrollbar px-2 pb-4">
+        <div className="px-4 py-2 mb-2">
+          <h3 className="text-xs font-semibold text-gray-400 uppercase tracking-wider">Messages</h3>
         </div>
 
-        <div className="space-y-2 mt-1">
+        <div className="space-y-1">
           {sortedFriends.map((f: any) => {
             const unread   = unreadCounts[f.id] || 0;
             const lastTime = lastMessageTimes[f.id] || 0;
@@ -254,62 +227,57 @@ export default function Sidebar({ user }: { user: any }) {
               <button
                 key={f.id}
                 onClick={() => router.push(`/dashboard/chat/${f.id}`)}
-                className="w-full brutal-box p-3 text-left cursor-pointer bg-background hover:bg-primary transition-colors group"
+                className="w-full text-left p-3 mx-2 rounded-xl hover:bg-white/10 transition-all group relative flex items-center gap-3 border border-transparent hover:border-white/5"
+                style={{ width: 'calc(100% - 16px)' }}
               >
-                {/* Row 1: name + badge + time */}
-                <div className="flex items-center justify-between gap-2">
-                  <div className="flex items-center gap-2 truncate flex-1">
-                    <div className="font-black uppercase text-xs sm:text-sm group-hover:translate-x-1 transition-transform truncate">
-                      {f.username}
-                    </div>
-                    {onlineUsers[f.id] && (
-                      <div className="w-2.5 h-2.5 bg-green-500 rounded-full border-2 border-text flex-shrink-0" title="Online" />
-                    )}
+                {/* Avatar with online indicator */}
+                <div className="relative flex-shrink-0">
+                  <div className="w-10 h-10 rounded-full bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center font-bold text-white shadow-lg">
+                    {f.username.charAt(0).toUpperCase()}
                   </div>
+                  {onlineUsers[f.id] && (
+                    <div className="absolute bottom-0 right-0 w-3 h-3 bg-cyan-400 rounded-full border-2 border-[#0B0F19] shadow-[0_0_8px_rgba(6,182,212,0.6)]" />
+                  )}
+                </div>
 
-                  <div className="flex items-center gap-1.5 flex-shrink-0">
-                    {/* Unread count badge */}
-                    {unread > 0 && (
-                      <span
-                        className="
-                          min-w-[20px] h-5 px-1
-                          bg-primary border-2 border-text
-                          group-hover:bg-white
-                          font-black text-[10px] leading-none
-                          flex items-center justify-center
-                          animate-pulse group-hover:animate-none
-                        "
-                      >
-                        {unread > 9 ? '9+' : unread}
-                      </span>
-                    )}
-
-                    {/* Last message timestamp */}
+                {/* Content */}
+                <div className="flex-1 min-w-0">
+                  <div className="flex justify-between items-baseline mb-0.5">
+                    <span className="font-semibold text-sm truncate text-white group-hover:text-indigo-200 transition-colors">
+                      {f.username}
+                    </span>
                     {lastTime > 0 && (
-                      <span className="text-[10px] font-bold text-text/40 group-hover:text-text/70 tabular-nums">
+                      <span className="text-[10px] font-medium text-gray-500 tabular-nums whitespace-nowrap ml-2">
                         {timeAgo(lastTime)}
                       </span>
                     )}
                   </div>
-                </div>
-
-                {/* Row 2: unread sub-label */}
-                {unread > 0 && (
-                  <div className="text-[10px] font-bold text-text/60 group-hover:text-text mt-0.5">
-                    {unread === 1 ? '1 new message' : `${unread} new messages`}
+                  <div className="flex justify-between items-center h-4">
+                    <p className="text-xs text-gray-400 truncate pr-2">
+                      {unread > 0 ? (
+                        <span className="text-indigo-400 font-medium">New messages</span>
+                      ) : (
+                        'Tap to chat'
+                      )}
+                    </p>
+                    {unread > 0 && (
+                      <span className="min-w-[18px] h-[18px] px-1 rounded-full bg-indigo-500 text-white font-bold text-[10px] flex items-center justify-center shadow-[0_0_10px_rgba(99,102,241,0.5)] flex-shrink-0">
+                        {unread > 9 ? '9+' : unread}
+                      </span>
+                    )}
                   </div>
-                )}
+                </div>
               </button>
             );
           })}
 
           {friends.length === 0 && (
-            <div className="font-bold text-gray-500 border-4 border-dashed border-text/40 p-4 text-center text-xs sm:text-sm mt-2">
-              NO FRIENDS YET
-              <br />
-              <span className="font-medium text-xs opacity-70">
-                Search &amp; add someone above
-              </span>
+            <div className="flex flex-col items-center justify-center py-10 px-4 text-center">
+              <div className="w-12 h-12 rounded-full bg-white/5 flex items-center justify-center mb-3 text-gray-500">
+                <Search size={20} />
+              </div>
+              <p className="text-sm font-medium text-gray-300">No friends yet</p>
+              <p className="text-xs text-gray-500 mt-1">Search above to connect</p>
             </div>
           )}
         </div>
