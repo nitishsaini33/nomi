@@ -3,7 +3,7 @@ import { useState, useEffect, useRef, useCallback, useMemo, memo } from 'react';
 import { api } from '@/lib/api';
 import { useChatStore, nextOptimisticId } from '@/store/chatStore';
 import { wsClient } from '@/lib/wsClient';
-import { Send, ArrowLeft, UserMinus, Smile, Video, Phone, Paperclip, Camera, Mic } from 'lucide-react';
+import { Send, ArrowLeft, UserMinus, Smile } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { motion, AnimatePresence } from 'framer-motion';
 
@@ -357,7 +357,7 @@ export default function ChatWindow({
   }
 
   return (
-    <div className="flex flex-col h-full bg-transparent text-white relative">
+    <div className="flex flex-col h-full w-full overflow-hidden bg-transparent text-white relative">
       {/* ── Header ── */}
       <div className="flex-shrink-0 flex items-center px-2 sm:px-4 py-2 sm:py-3 border-b border-white/5 bg-white/5 backdrop-blur-md z-10 shadow-sm">
         <div className="flex items-center flex-1 min-w-0 gap-2 cursor-pointer">
@@ -393,12 +393,6 @@ export default function ChatWindow({
         </div>
         
         <div className="flex items-center gap-1 sm:gap-2 flex-shrink-0 text-gray-300">
-          <button className="p-2 rounded-full hover:bg-white/10 transition-all">
-            <Video size={22} />
-          </button>
-          <button className="p-2 rounded-full hover:bg-white/10 transition-all">
-            <Phone size={20} />
-          </button>
           <button
             onClick={handleUnfriend}
             className="p-2 rounded-full hover:bg-red-500/20 text-gray-300 hover:text-red-400 transition-all"
@@ -498,12 +492,6 @@ export default function ChatWindow({
               className="flex-1 bg-transparent text-white px-1 py-2 text-[15px] sm:text-base outline-none placeholder-gray-400 w-full"
               autoComplete="off"
             />
-            <button type="button" className="p-1.5 text-gray-400 hover:text-white transition-colors flex-shrink-0 transform -rotate-45">
-              <Paperclip size={20} />
-            </button>
-            <button type="button" className="p-1.5 text-gray-400 hover:text-white transition-colors flex-shrink-0 hidden sm:block">
-              <Camera size={20} />
-            </button>
           </div>
 
           {/* Send Button */}
@@ -513,15 +501,11 @@ export default function ChatWindow({
             className={`w-12 h-12 rounded-full flex items-center justify-center flex-shrink-0 shadow-lg transition-all ${
               input.trim() 
                 ? 'bg-emerald-500 hover:bg-emerald-400 text-white shadow-emerald-500/25' 
-                : 'bg-[#1E293B]/80 backdrop-blur-xl text-gray-400 border border-white/10'
+                : 'bg-[#1E293B]/80 backdrop-blur-xl text-gray-400 border border-white/10 opacity-50'
             }`}
             aria-label="Send message"
           >
-            {input.trim() ? (
-              <Send size={20} className="translate-x-0.5" />
-            ) : (
-              <Mic size={20} />
-            )}
+            <Send size={20} className={input.trim() ? "translate-x-0.5" : ""} />
           </button>
         </form>
       </div>
