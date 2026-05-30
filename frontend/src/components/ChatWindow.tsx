@@ -107,7 +107,7 @@ const MessageBubble = memo(function MessageBubble({
         <div className="leading-relaxed">{msg.content}</div>
         
         {/* Display Reactions */}
-        {msg.reactions && msg.reactions.length > 0 && (
+        {!msg.is_deleted && msg.reactions && msg.reactions.length > 0 && (
           <div className="flex flex-wrap gap-1 mt-2">
             {msg.reactions.map((r: any) => (
               <span 
