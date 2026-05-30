@@ -54,11 +54,11 @@ const MessageBubble = memo(function MessageBubble({
     >
       <div
         className={[
-          'max-w-[80%] sm:max-w-[70%] px-4 py-3 relative',
-          'text-sm sm:text-base break-words',
+          'max-w-[85%] sm:max-w-[75%] px-3 pt-2 pb-1.5 relative min-w-[70px]',
+          'shadow-sm',
           isMe 
-            ? 'msg-bubble-me rounded-2xl rounded-tr-sm' 
-            : 'msg-bubble-other rounded-2xl rounded-tl-sm',
+            ? 'msg-bubble-me rounded-2xl rounded-tr-[4px]' 
+            : 'msg-bubble-other rounded-2xl rounded-tl-[4px]',
           msg.is_deleted ? 'opacity-50 italic' : ''
         ].join(' ')}
       >
@@ -107,15 +107,35 @@ const MessageBubble = memo(function MessageBubble({
           )}
         </div>
 
-        <div className="leading-relaxed">{msg.content}</div>
+        <div className="relative">
+          <div className="text-[15px] leading-snug whitespace-pre-wrap break-words">
+            {msg.content}
+            {/* Spacer for time */}
+            <span className="inline-block w-[3.5rem] h-1" />
+          </div>
+
+          <div className={`absolute bottom-[-2px] right-0 flex items-center gap-1 text-[10px] ${isMe ? 'text-white/80' : 'text-white/50'}`}>
+            {msg.is_edited && !msg.is_deleted && (
+              <span className="text-[9px] font-medium mr-0.5">(edited)</span>
+            )}
+            <span className="leading-none">{formatTime(msg.timestamp)}</span>
+            {isMe && (
+              <span className="flex items-center ml-0.5 leading-none">
+                {msg.status === 'READ' ? <span className="text-cyan-300">✓✓</span> : 
+                 msg.status === 'DELIVERED' ? <span>✓✓</span> : 
+                 <span className="opacity-60">✓</span>}
+              </span>
+            )}
+          </div>
+        </div>
         
         {/* Display Reactions */}
         {!msg.is_deleted && msg.reactions && msg.reactions.length > 0 && (
-          <div className="flex flex-wrap gap-1 mt-2">
+          <div className="flex flex-wrap gap-1 mt-1.5">
             {msg.reactions.map((r: any) => (
               <span 
                 key={r.id} 
-                className="text-xs bg-black/20 px-2 py-0.5 rounded-full border border-white/10 backdrop-blur-sm shadow-sm" 
+                className="text-[11px] bg-black/20 px-1.5 py-0.5 rounded-full border border-white/10 backdrop-blur-sm shadow-sm" 
                 title={r.user_id === currentUserId ? 'You' : otherUsername}
               >
                 {r.emoji}
@@ -123,22 +143,6 @@ const MessageBubble = memo(function MessageBubble({
             ))}
           </div>
         )}
-        
-        <div className={`flex items-center gap-1.5 mt-1.5 ${isMe ? 'justify-end text-white/70' : 'justify-start text-white/50'}`}>
-          {msg.is_edited && !msg.is_deleted && (
-            <span className="text-[9px] font-medium">(edited)</span>
-          )}
-          <div className="text-[10px] font-medium">
-            {formatTime(msg.timestamp)}
-          </div>
-          {isMe && (
-            <div className="text-[10px] flex items-center ml-0.5">
-              {msg.status === 'READ' ? <span className="text-cyan-300">✓✓</span> : 
-               msg.status === 'DELIVERED' ? <span>✓✓</span> : 
-               <span className="opacity-60">✓</span>}
-            </div>
-          )}
-        </div>
       </div>
     </motion.div>
   );
