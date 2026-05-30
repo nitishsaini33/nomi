@@ -300,9 +300,6 @@ export default function ChatWindow({
     const sent = wsClient.sendMessage(otherUserId, content);
     if (sent) {
       setInput('');
-      setTimeout(() => {
-        inputRef.current?.focus();
-      }, 0);
     }
   };
 
