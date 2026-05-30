@@ -179,7 +179,7 @@ export default function Sidebar({ user }: { user: any }) {
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             placeholder="Search users..."
-            className="glass-input pl-10 text-sm py-2.5 rounded-full"
+            className="glass-input !pl-10 text-sm py-2.5 rounded-full"
           />
         </form>
       </div>
