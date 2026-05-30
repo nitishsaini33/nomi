@@ -248,7 +248,7 @@ export default function ChatWindow({
   const fetchMessages = async (cursor?: string) => {
     if (!cursor) setHasMore(true);
     try {
-      const url = `/chat/${otherUserId}?limit=50${cursor ? \`&cursor=\${encodeURIComponent(cursor)}\` : ''}`;
+      const url = `/chat/${otherUserId}?limit=50${cursor ? `&cursor=${encodeURIComponent(cursor)}` : ''}`;
       const data = await api.get(url);
       if (data.length < 50) setHasMore(false);
       setMessages(otherUserId, data);
