@@ -46,6 +46,32 @@ const MessageBubble = memo(function MessageBubble({
   deleteMessage: (id: string) => void;
   reactToMessage: (msgId: string, emoji: string) => void;
 }) {
+  const [showActions, setShowActions] = useState(false);
+  const pressTimer = useRef<NodeJS.Timeout | null>(null);
+
+  const startPress = () => {
+    if (pressTimer.current) clearTimeout(pressTimer.current);
+    pressTimer.current = setTimeout(() => {
+      setShowActions(true);
+    }, 500);
+  };
+
+  const cancelPress = () => {
+    if (pressTimer.current) clearTimeout(pressTimer.current);
+  };
+
+  useEffect(() => {
+    if (showActions) {
+      const hide = () => setShowActions(false);
+      window.addEventListener('click', hide);
+      window.addEventListener('scroll', hide, { capture: true, passive: true });
+      return () => {
+        window.removeEventListener('click', hide);
+        window.removeEventListener('scroll', hide, { capture: true });
+      };
+    }
+  }, [showActions]);
+
   return (
       <motion.div 
         initial={{ opacity: 0, y: 10, scale: 0.95 }}
@@ -54,6 +80,12 @@ const MessageBubble = memo(function MessageBubble({
         className={`flex ${isMe ? 'justify-end' : 'justify-start'} group mb-6 relative`}
       >
         <div
+          onMouseDown={startPress}
+          onMouseUp={cancelPress}
+          onMouseLeave={cancelPress}
+          onTouchStart={startPress}
+          onTouchEnd={cancelPress}
+          onTouchMove={cancelPress}
           className={[
             'max-w-[85%] sm:max-w-[75%] px-3 pt-2 pb-1.5 relative min-w-[70px]',
             'shadow-sm',
@@ -63,8 +95,12 @@ const MessageBubble = memo(function MessageBubble({
             msg.is_deleted ? 'opacity-50 italic' : ''
           ].join(' ')}
         >
-          {/* Action buttons (visible on hover) */}
-          <div className={`absolute -top-3 ${isMe ? '-left-8' : '-right-8'} hidden group-hover:flex gap-1 z-10`}>
+          {/* Action buttons (visible on hover desktop, or long press mobile) */}
+          <div 
+            className={`absolute -top-3 ${isMe ? '-left-8' : '-right-8'} ${showActions ? 'flex' : 'hidden md:group-hover:flex'} gap-1 z-10`}
+            onClick={(e) => e.stopPropagation()}
+            onTouchStart={(e) => e.stopPropagation()}
+          >
             {!msg.is_deleted && msg.id && (
               <div className="relative">
                 <button 
@@ -85,7 +121,10 @@ const MessageBubble = memo(function MessageBubble({
                       {['👍', '❤️', '😂', '😮', '😢'].map(emoji => (
                         <button 
                           key={emoji} 
-                          onClick={() => reactToMessage(msg.id, emoji)} 
+                          onClick={() => {
+                            reactToMessage(msg.id, emoji);
+                            setShowActions(false);
+                          }} 
                           className="w-8 h-8 flex items-center justify-center hover:bg-white/20 rounded-full transition-all text-lg hover:scale-125"
                         >
                           {emoji}
@@ -99,7 +138,10 @@ const MessageBubble = memo(function MessageBubble({
             
             {canDelete && (
               <button
-                onClick={() => deleteMessage(msg.id)}
+                onClick={() => {
+                  deleteMessage(msg.id);
+                  setShowActions(false);
+                }}
                 className="w-7 h-7 rounded-full bg-red-500/20 backdrop-blur-md border border-red-500/30 text-red-200 flex items-center justify-center hover:bg-red-500/40 transition-all shadow-lg text-xs font-bold"
                 title="Delete Message"
               >
