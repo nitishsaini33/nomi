@@ -7,6 +7,7 @@ import { Send, ArrowLeft, UserMinus, Smile } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { motion, AnimatePresence } from 'framer-motion';
 import dynamic from 'next/dynamic';
+import ConfirmModal from './ConfirmModal';
 
 const EmojiPicker = dynamic(() => import('emoji-picker-react'), { ssr: false });
 
@@ -178,6 +179,7 @@ export default function ChatWindow({
   const [hasMore, setHasMore] = useState(true);
   const [openReactionMsgId, setOpenReactionMsgId] = useState<string | null>(null);
   const [showEmojiPicker, setShowEmojiPicker] = useState(false);
+  const [confirmModalConfig, setConfirmModalConfig] = useState<any>(null);
 
   const otherUser = useMemo(
     () => friends.find((f: any) => f.id === otherUserId) || null,
@@ -350,16 +352,26 @@ export default function ChatWindow({
     }
   }, [otherUserId, currentUser.id, addReaction, messages]);
 
-  const handleUnfriend = useCallback(async () => {
+  const handleUnfriend = useCallback(() => {
     if (!otherUser) return;
-    if (!confirm(`Are you sure you want to unfriend ${otherUser.username}? This will delete all chat history.`)) return;
-    try {
-      await api.delete(`/users/friends/${otherUserId}`);
-      removeFriendData(otherUserId);
-      router.push('/dashboard');
-    } catch (e) {
-      console.error('Failed to unfriend', e);
-    }
+    setConfirmModalConfig({
+      title: 'Unfriend',
+      message: `Are you sure you want to unfriend ${otherUser.username}? This will permanently delete all chat history between you.`,
+      confirmText: 'Unfriend',
+      icon: 'unfriend',
+      isDanger: true,
+      onConfirm: async () => {
+        setConfirmModalConfig(null);
+        try {
+          await api.delete(`/users/friends/${otherUserId}`);
+          removeFriendData(otherUserId);
+          router.push('/dashboard');
+        } catch (e) {
+          console.error('Failed to unfriend', e);
+        }
+      },
+      onCancel: () => setConfirmModalConfig(null)
+    });
   }, [otherUserId, otherUser, router, removeFriendData]);
 
   if (!otherUser) {
@@ -555,6 +567,10 @@ export default function ChatWindow({
           </button>
         </form>
       </div>
+      
+      {confirmModalConfig && (
+        <ConfirmModal {...confirmModalConfig} />
+      )}
     </div>
   );
 }

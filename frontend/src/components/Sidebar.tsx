@@ -7,6 +7,8 @@ import { useRouter, usePathname } from 'next/navigation';
 import { useChatStore } from '@/store/chatStore';
 import { motion, AnimatePresence } from 'framer-motion';
 
+import ConfirmModal from './ConfirmModal';
+
 /** Returns a compact relative time string */
 function timeAgo(epochMs: number): string {
   const diff = Date.now() - epochMs;
@@ -24,6 +26,7 @@ export default function Sidebar({ user }: { user: any }) {
   const [search, setSearch] = useState('');
   const [searchResults, setSearchResults] = useState<any[]>([]);
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [confirmModalConfig, setConfirmModalConfig] = useState<any>(null);
   const [pendingRequestCount, setPendingRequestCount] = useState(0);
   const [isSearchFocused, setIsSearchFocused] = useState(false);
   const router = useRouter();
@@ -97,23 +100,41 @@ export default function Sidebar({ user }: { user: any }) {
   };
 
   const handleLogout = () => {
-    localStorage.removeItem('token');
-    useChatStore.getState().clearStore();
-    router.push('/login');
+    setConfirmModalConfig({
+      title: 'Log Out',
+      message: 'Are you sure you want to log out of your account?',
+      confirmText: 'Log Out',
+      icon: 'logout',
+      onConfirm: () => {
+        localStorage.removeItem('token');
+        useChatStore.getState().clearStore();
+        router.push('/login');
+      },
+      onCancel: () => setConfirmModalConfig(null)
+    });
   };
 
-  const handleDeleteAccount = async () => {
-    const confirm1 = confirm("Are you sure you want to delete your account? This action cannot be undone.");
-    if (!confirm1) return;
-    const confirm2 = confirm("WARNING: This will permanently delete ALL your messages, friends, and data. Type OK to proceed.");
-    if (!confirm2) return;
-    try {
-      await api.delete('/users/me');
-      alert('Account deleted successfully.');
-      handleLogout();
-    } catch (e: any) {
-      alert(e.message || 'Failed to delete account');
-    }
+  const handleDeleteAccount = () => {
+    setConfirmModalConfig({
+      title: 'Delete Account',
+      message: 'Are you sure you want to delete your account? This action cannot be undone and will permanently delete ALL your messages, friends, and data.',
+      confirmText: 'Delete Permanently',
+      isDanger: true,
+      icon: 'trash',
+      onConfirm: async () => {
+        setConfirmModalConfig(null);
+        try {
+          await api.delete('/users/me');
+          alert('Account deleted successfully.');
+          localStorage.removeItem('token');
+          useChatStore.getState().clearStore();
+          router.push('/login');
+        } catch (e: any) {
+          alert(e.message || 'Failed to delete account');
+        }
+      },
+      onCancel: () => setConfirmModalConfig(null)
+    });
   };
 
   const sortedFriends = useMemo(() => {
@@ -355,6 +376,10 @@ export default function Sidebar({ user }: { user: any }) {
             fetchRequestCount();
           }}
         />
+      )}
+
+      {confirmModalConfig && (
+        <ConfirmModal {...confirmModalConfig} />
       )}
     </div>
   );
