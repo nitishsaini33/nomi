@@ -188,7 +188,7 @@ export default function Sidebar({ user }: { user: any }) {
 
       {/* ── User Header ── */}
       <div className="flex-shrink-0 px-4 sm:px-6 pb-4 border-b border-white/5">
-        <div className="font-bold text-lg md:text-xl truncate text-white select-none">
+        <div className="font-bold text-lg md:text-xl truncate text-white select-none uppercase tracking-wider">
           {user.username}
         </div>
       </div>
