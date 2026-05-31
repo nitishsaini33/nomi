@@ -159,7 +159,7 @@ export default function Sidebar({ user }: { user: any }) {
           className="flex items-center gap-3 cursor-pointer group text-left"
           title="Go to Dashboard"
         >
-          <img src="/logo.png" alt="Nomihub Logo" className="w-8 h-8 object-cover rounded-xl shadow-sm border border-black/5 dark:border-white/5 group-hover:opacity-90 transition-opacity" />
+          <img src="/logo.png" alt="Nomihub Logo" className="w-8 h-8 object-cover rounded-xl shadow-sm border border-black/5 dark:border-white/5 group-hover:opacity-90 transition-all duration-300 invert dark:invert-0" />
           <h1 className="font-bold text-xl tracking-tight text-primary group-hover:brightness-110 transition-all">
             Nomihub
           </h1>

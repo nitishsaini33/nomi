@@ -57,7 +57,7 @@ export default function Login() {
       >
         <div className="text-center mb-8">
           <div className="flex justify-center mb-6">
-            <img src="/logo.png" alt="Nomihub Logo" className="w-16 h-16 rounded-2xl shadow-sm border border-black/5 dark:border-white/5" />
+            <img src="/logo.png" alt="Nomihub Logo" className="w-16 h-16 rounded-2xl shadow-sm border border-black/5 dark:border-white/5 transition-all duration-300 invert dark:invert-0" />
           </div>
           <h2 className="text-3xl sm:text-4xl font-bold text-primary mb-2">
             Welcome Back

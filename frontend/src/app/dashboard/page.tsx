@@ -16,7 +16,7 @@ export default function DashboardHome() {
           <img 
             src="/logo.png" 
             alt="Nomihub Logo" 
-            className="w-24 h-24 object-cover rounded-[2rem] shadow-[var(--clay-shadow-md)] border border-black/5 dark:border-white/5 bg-surface" 
+            className="w-24 h-24 object-cover rounded-[2rem] shadow-[var(--clay-shadow-md)] border border-black/5 dark:border-white/5 bg-surface transition-all duration-300 invert dark:invert-0" 
           />
         </div>
         

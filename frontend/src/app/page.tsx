@@ -25,7 +25,7 @@ export default function Home() {
       {/* Navbar */}
       <nav className="w-[95%] sm:w-[90%] max-w-6xl mx-auto mt-6 px-6 py-4 flex justify-between items-center relative z-10 clay-panel-sm">
         <div className="flex items-center gap-3">
-          <img src="/logo.png" alt="Nomihub Logo" className="w-10 h-10 object-cover rounded-xl shadow-sm border border-black/5 dark:border-white/5" />
+          <img src="/logo.png" alt="Nomihub Logo" className="w-10 h-10 object-cover rounded-xl shadow-sm border border-black/5 dark:border-white/5 transition-all duration-300 invert dark:invert-0" />
           <h1 className="font-bold text-2xl tracking-tight text-primary">
             Nomihub
           </h1>
