@@ -28,9 +28,9 @@ export default function Home() {
 
       {/* Hero Section */}
       <main className="flex-1 flex flex-col items-center justify-center px-4 py-8 sm:p-6 text-center relative z-10">
-        <div className="max-w-4xl mx-auto space-y-6 sm:space-y-8 sm:mt-[-5vh]">
+        <div className="max-w-4xl mx-auto sm:mt-[-5vh] flex flex-col items-center">
           
-          <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-white/5 border border-white/10 text-xs sm:text-sm font-medium text-indigo-300 mb-2 shadow-sm backdrop-blur-sm">
+          <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-white/5 border border-white/10 text-xs sm:text-sm font-medium text-indigo-300 mb-6 sm:mb-8 shadow-sm backdrop-blur-sm">
             <span className="relative flex h-2 w-2">
               <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-indigo-400 opacity-75"></span>
               <span className="relative inline-flex rounded-full h-2 w-2 bg-indigo-500"></span>
@@ -38,18 +38,18 @@ export default function Home() {
             Welcome to the future of messaging
           </div>
 
-          <h1 className="text-4xl sm:text-6xl md:text-7xl font-extrabold tracking-tight leading-tight drop-shadow-2xl">
+          <h1 className="text-4xl sm:text-6xl md:text-7xl font-extrabold tracking-tight leading-tight drop-shadow-2xl mb-6 sm:mb-8">
             Connect fluidly with <br className="hidden sm:block" />
             <span className="bg-clip-text text-transparent bg-gradient-to-r from-indigo-400 via-purple-400 to-pink-400">
               Flowing Energy
             </span>
           </h1>
 
-          <p className="text-base sm:text-lg md:text-xl text-gray-400 max-w-2xl mx-auto leading-relaxed px-2">
+          <p className="text-base sm:text-lg md:text-xl text-gray-400 max-w-2xl mx-auto leading-relaxed px-2 mb-8 sm:mb-10">
             Nomihub is a next-generation chat platform designed for those who value premium aesthetics, blazing fast performance, and seamless real-time connections.
           </p>
 
-          <div className="flex flex-col sm:flex-row items-center justify-center gap-4 pt-6 sm:pt-8 w-full px-4 sm:px-0">
+          <div className="flex flex-col sm:flex-row items-center justify-center gap-4 sm:gap-6 w-full px-4 sm:px-0">
             <Link 
               href="/register" 
               className="group flex items-center justify-center gap-2 w-full sm:w-auto bg-gradient-to-r from-indigo-500 to-purple-600 text-white font-bold text-base sm:text-lg px-6 py-3 sm:px-8 sm:py-4 rounded-full transition-all shadow-[0_0_30px_rgba(99,102,241,0.4)] hover:shadow-[0_0_40px_rgba(99,102,241,0.6)] hover:scale-105"
