@@ -1,7 +1,20 @@
+'use client'
 import Link from "next/link";
 import { ArrowRight, LogIn } from "lucide-react";
+import { useEffect } from "react";
+import { useRouter } from "next/navigation";
+import { useAuth } from "@/hooks/useAuth";
 
 export default function Home() {
+  const { user, loading } = useAuth();
+  const router = useRouter();
+
+  useEffect(() => {
+    if (!loading && user) {
+      router.push('/dashboard');
+    }
+  }, [user, loading, router]);
+
   return (
     <div className="min-h-dvh flex flex-col relative overflow-hidden bg-[#0B0F19] text-white font-sans">
       {/* Background Glowing Orbs */}

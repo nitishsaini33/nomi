@@ -5,6 +5,7 @@ import { api } from '@/lib/api';
 import { useChatStore } from '@/store/chatStore';
 import Link from 'next/link';
 import { motion } from 'framer-motion';
+import { useAuth } from '@/hooks/useAuth';
 
 export default function Login() {
   const [identifier, setIdentifier] = useState(''); // username or email
@@ -13,6 +14,13 @@ export default function Login() {
   const [loading, setLoading] = useState(false);
   const router = useRouter();
   const { setCurrentUser } = useChatStore();
+  const { user, loading: authLoading } = useAuth();
+
+  useEffect(() => {
+    if (!authLoading && user) {
+      router.push('/dashboard');
+    }
+  }, [user, authLoading, router]);
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
