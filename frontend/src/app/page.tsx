@@ -1,48 +1,76 @@
 import Link from "next/link";
-import { MessageSquare } from "lucide-react";
+import { ArrowRight, LogIn } from "lucide-react";
 
 export default function Home() {
   return (
-    <div className="min-h-dvh flex flex-col items-center justify-center p-4 sm:p-8 bg-background relative overflow-hidden">
-      {/* Decorative shapes – hidden on tiny screens so they don't clutter */}
-      <div className="hidden sm:block absolute top-8 left-8 w-20 h-20 md:w-32 md:h-32 bg-[#ff5900] border-4 border-text shadow-[8px_8px_0px_0px_#111111] transform -rotate-12 pointer-events-none" />
-      <div className="hidden sm:block absolute bottom-16 right-8 md:right-16 w-28 h-28 md:w-48 md:h-48 bg-white border-4 border-text shadow-[8px_8px_0px_0px_#111111] rounded-full pointer-events-none" />
+    <div className="min-h-dvh flex flex-col relative overflow-hidden bg-[#0B0F19] text-white font-sans">
+      {/* Background Glowing Orbs */}
+      <div className="absolute top-[-10%] left-[-10%] w-[50%] h-[50%] bg-indigo-600/20 rounded-full blur-[120px] pointer-events-none" />
+      <div className="absolute bottom-[-10%] right-[-10%] w-[50%] h-[50%] bg-purple-600/20 rounded-full blur-[120px] pointer-events-none" />
+      
+      {/* Navbar */}
+      <nav className="w-full px-6 py-4 sm:px-12 flex justify-between items-center relative z-10 border-b border-white/5 bg-white/5 backdrop-blur-md">
+        <div className="flex items-center gap-3">
+          <img src="/logo.png" alt="Nomihub Logo" className="w-10 h-10 object-cover rounded-xl shadow-sm border border-white/10" />
+          <h1 className="font-bold text-2xl tracking-tight bg-clip-text text-transparent bg-gradient-to-r from-indigo-400 to-purple-400">
+            Nomihub
+          </h1>
+        </div>
+        <div className="hidden sm:flex items-center gap-4">
+          <Link href="/login" className="text-gray-300 hover:text-white font-medium transition-colors px-4 py-2">
+            Log in
+          </Link>
+          <Link href="/register" className="bg-indigo-500/20 border border-indigo-500/50 hover:bg-indigo-500 hover:text-white text-indigo-300 font-medium px-6 py-2 rounded-full transition-all shadow-[0_0_15px_rgba(99,102,241,0.2)]">
+            Sign up
+          </Link>
+        </div>
+      </nav>
 
-      <div className="relative z-10 brutal-box p-6 sm:p-10 md:p-12 w-full max-w-2xl text-center space-y-6 sm:space-y-8 bg-white/90 backdrop-blur-sm">
-        <div className="flex justify-center">
-          <div className="p-3 sm:p-4 bg-primary border-4 border-text shadow-brutal inline-block transform rotate-6">
-            <MessageSquare size={36} className="text-text sm:hidden" />
-            <MessageSquare size={48} className="text-text hidden sm:block" />
+      {/* Hero Section */}
+      <main className="flex-1 flex flex-col items-center justify-center p-6 text-center relative z-10">
+        <div className="max-w-4xl mx-auto space-y-8 mt-[-5vh]">
+          
+          <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-white/5 border border-white/10 text-sm font-medium text-indigo-300 mb-2 shadow-sm backdrop-blur-sm">
+            <span className="relative flex h-2 w-2">
+              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-indigo-400 opacity-75"></span>
+              <span className="relative inline-flex rounded-full h-2 w-2 bg-indigo-500"></span>
+            </span>
+            Welcome to the future of messaging
+          </div>
+
+          <h1 className="text-5xl sm:text-6xl md:text-7xl font-extrabold tracking-tight leading-tight drop-shadow-2xl">
+            Connect fluidly with <br className="hidden sm:block" />
+            <span className="bg-clip-text text-transparent bg-gradient-to-r from-indigo-400 via-purple-400 to-pink-400">
+              Flowing Energy
+            </span>
+          </h1>
+
+          <p className="text-lg sm:text-xl md:text-2xl text-gray-400 max-w-2xl mx-auto leading-relaxed">
+            Nomihub is a next-generation chat platform designed for those who value premium aesthetics, blazing fast performance, and seamless real-time connections.
+          </p>
+
+          <div className="flex flex-col sm:flex-row items-center justify-center gap-4 pt-8">
+            <Link 
+              href="/register" 
+              className="group flex items-center justify-center gap-2 w-full sm:w-auto bg-gradient-to-r from-indigo-500 to-purple-600 text-white font-bold text-lg px-8 py-4 rounded-full transition-all shadow-[0_0_30px_rgba(99,102,241,0.4)] hover:shadow-[0_0_40px_rgba(99,102,241,0.6)] hover:scale-105"
+            >
+              Get Started
+              <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
+            </Link>
+            
+            <Link 
+              href="/login" 
+              className="flex items-center justify-center gap-2 w-full sm:w-auto bg-white/5 hover:bg-white/10 border border-white/10 text-white font-bold text-lg px-8 py-4 rounded-full transition-all backdrop-blur-md hover:border-white/20"
+            >
+              <LogIn className="w-5 h-5 text-gray-400" />
+              Sign In
+            </Link>
           </div>
         </div>
+      </main>
 
-        <h1 className="text-4xl sm:text-5xl md:text-7xl font-black uppercase tracking-tight text-text leading-tight">
-          Talk <br />
-          <span className="text-primary bg-text px-4 py-1 inline-block -rotate-2 transform">
-            Loud.
-          </span>
-        </h1>
-
-        <p className="text-base sm:text-xl md:text-2xl font-medium border-l-4 border-primary pl-4 text-left">
-          A high-contrast, anti-corporate chatting application for those who
-          want to be heard.
-        </p>
-
-        <div className="flex flex-col sm:flex-row gap-4 sm:gap-6 justify-center pt-2 sm:pt-6">
-          <Link
-            href="/login"
-            className="brutal-btn text-lg sm:text-xl py-3 sm:py-4 px-8 bg-white w-full sm:w-auto"
-          >
-            LOGIN
-          </Link>
-          <Link
-            href="/register"
-            className="brutal-btn text-lg sm:text-xl py-3 sm:py-4 px-8 bg-primary w-full sm:w-auto"
-          >
-            REGISTER
-          </Link>
-        </div>
-      </div>
+      {/* Decorative Bottom Wave/Line */}
+      <div className="absolute bottom-0 left-0 w-full h-[1px] bg-gradient-to-r from-transparent via-indigo-500/50 to-transparent" />
     </div>
   );
 }
