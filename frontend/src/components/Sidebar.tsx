@@ -132,12 +132,16 @@ export default function Sidebar({ user }: { user: any }) {
     <div className="h-full flex flex-col bg-transparent text-white w-full">
       {/* ── Brand & Actions Header ── */}
       <div className="flex-shrink-0 flex justify-between items-center px-4 sm:px-6 pt-5 pb-3 bg-transparent">
-        <div className="flex items-center gap-3">
-          <img src="/logo.png" alt="Nomihub Logo" className="w-8 h-8 object-cover rounded-xl shadow-sm border border-white/10" />
-          <h1 className="font-bold text-xl tracking-tight bg-clip-text text-transparent bg-gradient-to-r from-indigo-400 to-purple-400">
+        <button 
+          onClick={() => router.push('/dashboard')}
+          className="flex items-center gap-3 cursor-pointer group text-left"
+          title="Go to Dashboard"
+        >
+          <img src="/logo.png" alt="Nomihub Logo" className="w-8 h-8 object-cover rounded-xl shadow-sm border border-white/10 group-hover:opacity-90 transition-opacity" />
+          <h1 className="font-bold text-xl tracking-tight bg-clip-text text-transparent bg-gradient-to-r from-indigo-400 to-purple-400 group-hover:from-indigo-300 group-hover:to-purple-300 transition-all">
             Nomihub
           </h1>
-        </div>
+        </button>
         
         <div className="flex gap-2">
           <motion.button
@@ -184,13 +188,9 @@ export default function Sidebar({ user }: { user: any }) {
 
       {/* ── User Header ── */}
       <div className="flex-shrink-0 px-4 sm:px-6 pb-4 border-b border-white/5">
-        <button
-          onClick={() => router.push('/dashboard')}
-          className="font-bold text-lg md:text-xl truncate hover:text-indigo-400 transition-colors cursor-pointer"
-          title="Go to Dashboard"
-        >
+        <div className="font-bold text-lg md:text-xl truncate text-white">
           {user.username}
-        </button>
+        </div>
       </div>
 
       <div className="flex-shrink-0 px-4 sm:px-6 py-4">
