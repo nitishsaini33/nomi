@@ -27,10 +27,10 @@ export default function Home() {
       </nav>
 
       {/* Hero Section */}
-      <main className="flex-1 flex flex-col items-center justify-center p-6 text-center relative z-10">
-        <div className="max-w-4xl mx-auto space-y-8 mt-[-5vh]">
+      <main className="flex-1 flex flex-col items-center justify-center px-4 py-8 sm:p-6 text-center relative z-10">
+        <div className="max-w-4xl mx-auto space-y-6 sm:space-y-8 sm:mt-[-5vh]">
           
-          <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-white/5 border border-white/10 text-sm font-medium text-indigo-300 mb-2 shadow-sm backdrop-blur-sm">
+          <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-white/5 border border-white/10 text-xs sm:text-sm font-medium text-indigo-300 mb-2 shadow-sm backdrop-blur-sm">
             <span className="relative flex h-2 w-2">
               <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-indigo-400 opacity-75"></span>
               <span className="relative inline-flex rounded-full h-2 w-2 bg-indigo-500"></span>
@@ -38,31 +38,31 @@ export default function Home() {
             Welcome to the future of messaging
           </div>
 
-          <h1 className="text-5xl sm:text-6xl md:text-7xl font-extrabold tracking-tight leading-tight drop-shadow-2xl">
+          <h1 className="text-4xl sm:text-6xl md:text-7xl font-extrabold tracking-tight leading-tight drop-shadow-2xl">
             Connect fluidly with <br className="hidden sm:block" />
             <span className="bg-clip-text text-transparent bg-gradient-to-r from-indigo-400 via-purple-400 to-pink-400">
               Flowing Energy
             </span>
           </h1>
 
-          <p className="text-lg sm:text-xl md:text-2xl text-gray-400 max-w-2xl mx-auto leading-relaxed">
+          <p className="text-base sm:text-lg md:text-xl text-gray-400 max-w-2xl mx-auto leading-relaxed px-2">
             Nomihub is a next-generation chat platform designed for those who value premium aesthetics, blazing fast performance, and seamless real-time connections.
           </p>
 
-          <div className="flex flex-col sm:flex-row items-center justify-center gap-4 pt-8">
+          <div className="flex flex-col sm:flex-row items-center justify-center gap-4 pt-6 sm:pt-8 w-full px-4 sm:px-0">
             <Link 
               href="/register" 
-              className="group flex items-center justify-center gap-2 w-full sm:w-auto bg-gradient-to-r from-indigo-500 to-purple-600 text-white font-bold text-lg px-8 py-4 rounded-full transition-all shadow-[0_0_30px_rgba(99,102,241,0.4)] hover:shadow-[0_0_40px_rgba(99,102,241,0.6)] hover:scale-105"
+              className="group flex items-center justify-center gap-2 w-full sm:w-auto bg-gradient-to-r from-indigo-500 to-purple-600 text-white font-bold text-base sm:text-lg px-6 py-3 sm:px-8 sm:py-4 rounded-full transition-all shadow-[0_0_30px_rgba(99,102,241,0.4)] hover:shadow-[0_0_40px_rgba(99,102,241,0.6)] hover:scale-105"
             >
               Get Started
-              <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
+              <ArrowRight className="w-4 h-4 sm:w-5 sm:h-5 group-hover:translate-x-1 transition-transform" />
             </Link>
             
             <Link 
               href="/login" 
-              className="flex items-center justify-center gap-2 w-full sm:w-auto bg-white/5 hover:bg-white/10 border border-white/10 text-white font-bold text-lg px-8 py-4 rounded-full transition-all backdrop-blur-md hover:border-white/20"
+              className="flex items-center justify-center gap-2 w-full sm:w-auto bg-white/5 hover:bg-white/10 border border-white/10 text-white font-bold text-base sm:text-lg px-6 py-3 sm:px-8 sm:py-4 rounded-full transition-all backdrop-blur-md hover:border-white/20"
             >
-              <LogIn className="w-5 h-5 text-gray-400" />
+              <LogIn className="w-4 h-4 sm:w-5 sm:h-5 text-gray-400" />
               Sign In
             </Link>
           </div>
