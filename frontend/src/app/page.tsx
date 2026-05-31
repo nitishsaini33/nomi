@@ -3,7 +3,7 @@ import { ArrowRight, LogIn } from "lucide-react";
 
 export default function Home() {
   return (
-    <div className="min-h-dvh flex flex-col relative overflow-hidden bg-[#0B0F19] text-white font-sans select-none">
+    <div className="min-h-dvh flex flex-col relative overflow-hidden bg-[#0B0F19] text-white font-sans">
       {/* Background Glowing Orbs */}
       <div className="absolute top-[-10%] left-[-10%] w-[50%] h-[50%] bg-indigo-600/20 rounded-full blur-[120px] pointer-events-none" />
       <div className="absolute bottom-[-10%] right-[-10%] w-[50%] h-[50%] bg-purple-600/20 rounded-full blur-[120px] pointer-events-none" />
