@@ -86,6 +86,13 @@ async def accept_request(connection_id: str, db: AsyncSession = Depends(get_db),
         
     conn.status = ConnectionStatus.ACCEPTED
     await db.commit()
+    
+    # Notify the original requester via websocket
+    await manager.send_personal_message(
+        {"type": "friend_request_accepted", "payload": {"friend_id": current_user.id}},
+        conn.requester_id
+    )
+    
     return {"message": "Request accepted"}
 
 @router.delete("/friends/{friend_id}")

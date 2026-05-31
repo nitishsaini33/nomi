@@ -96,6 +96,9 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
           removeFriendData(friendId);
           triggerSidebarRefresh();
           if (activeChatUserId === friendId) router.push('/dashboard');
+        } else if (eventType === 'friend_request_accepted') {
+          // Our request was accepted by someone else, fetch friends immediately
+          triggerSidebarRefresh();
         }
       };
 
