@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import "./globals.css";
 import Providers from "@/lib/queryClient";
 import { Inter } from "next/font/google";
+import { ThemeProvider } from "@/components/ThemeProvider";
 
 const inter = Inter({
   subsets: ["latin"],
@@ -11,7 +12,7 @@ const inter = Inter({
 
 export const metadata: Metadata = {
   title: "Nomihub",
-  description: "A high-contrast, modern chatting application",
+  description: "A premium Claymorphism chat application",
 };
 
 export const viewport = {
@@ -28,9 +29,16 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en" className={inter.variable}>
-      <body className="antialiased">
-        <Providers>{children}</Providers>
+    <html lang="en" className={inter.variable} suppressHydrationWarning>
+      <body className="antialiased bg-background text-text transition-colors duration-300">
+        <ThemeProvider
+          attribute="class"
+          defaultTheme="system"
+          enableSystem
+          disableTransitionOnChange
+        >
+          <Providers>{children}</Providers>
+        </ThemeProvider>
       </body>
     </html>
   );

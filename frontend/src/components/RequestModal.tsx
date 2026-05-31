@@ -46,20 +46,20 @@ export default function RequestModal({ onClose }: { onClose: () => void }) {
         animate={{ opacity: 1, scale: 1, y: 0 }}
         exit={{ opacity: 0, scale: 0.95, y: 20 }}
         transition={{ type: "spring", stiffness: 300, damping: 25 }}
-        className="flex flex-col bg-[#0B0F19]/80 backdrop-blur-2xl w-full max-h-[85dvh] sm:w-[480px] sm:max-h-[72vh] rounded-3xl border border-white/10 shadow-[0_20px_60px_-15px_rgba(0,0,0,0.7)] overflow-hidden"
+        className="flex flex-col clay-panel w-full max-h-[85dvh] sm:w-[480px] sm:max-h-[72vh] overflow-hidden"
       >
         {/* ── Header ── */}
-        <div className="flex-shrink-0 flex items-center justify-between gap-3 px-6 py-5 border-b border-white/10 bg-white/5">
+        <div className="flex-shrink-0 flex items-center justify-between gap-3 px-6 py-5 border-b border-black/5 dark:border-white/5">
           <div className="flex items-center gap-3 min-w-0">
-            <div className="p-2 bg-indigo-500/20 text-indigo-400 rounded-xl border border-indigo-500/30 flex-shrink-0">
+            <div className="p-2 bg-primary/20 text-primary rounded-xl flex-shrink-0 shadow-[var(--clay-shadow-sm)]">
               <UserCheck size={20} />
             </div>
             <div className="min-w-0">
-              <h2 className="text-lg sm:text-xl font-bold text-white leading-tight">
+              <h2 className="text-lg sm:text-xl font-bold text-text leading-tight">
                 Friend Requests
               </h2>
               {!loading && !error && (
-                <p className="text-xs font-medium text-gray-400 mt-0.5">
+                <p className="text-xs font-bold text-text-muted mt-0.5">
                   {requests.length === 0
                     ? 'No pending requests'
                     : `${requests.length} pending`}
@@ -72,14 +72,14 @@ export default function RequestModal({ onClose }: { onClose: () => void }) {
             <button
               onClick={fetchRequests}
               title="Refresh"
-              className="p-2 rounded-xl text-gray-400 hover:text-white hover:bg-white/10 transition-all border border-transparent hover:border-white/10"
+              className="clay-button !p-2 text-text-muted hover:text-primary transition-all"
             >
               <RefreshCw size={18} className={loading ? 'animate-spin' : ''} />
             </button>
             <button
               onClick={onClose}
               aria-label="Close"
-              className="p-2 rounded-xl text-gray-400 hover:text-white hover:bg-white/10 transition-all border border-transparent hover:border-white/10"
+              className="clay-button !p-2 text-text-muted hover:text-red-500 transition-all"
             >
               <X size={20} />
             </button>
@@ -103,13 +103,13 @@ export default function RequestModal({ onClose }: { onClose: () => void }) {
               initial={{ opacity: 0 }} animate={{ opacity: 1 }}
               className="py-10 flex flex-col items-center gap-4 text-center"
             >
-              <div className="p-4 bg-red-500/10 rounded-full border border-red-500/20">
-                <AlertCircle size={32} className="text-red-400" />
+              <div className="p-4 bg-red-500/10 rounded-full shadow-[var(--clay-shadow-sm)] text-red-500">
+                <AlertCircle size={32} />
               </div>
-              <p className="font-semibold text-sm text-red-300">{error}</p>
+              <p className="font-bold text-sm text-red-500">{error}</p>
               <button
                 onClick={fetchRequests}
-                className="glass-button-secondary text-sm mt-2"
+                className="clay-button text-sm mt-2"
               >
                 Try Again
               </button>
@@ -122,12 +122,12 @@ export default function RequestModal({ onClose }: { onClose: () => void }) {
               initial={{ opacity: 0 }} animate={{ opacity: 1 }}
               className="py-12 flex flex-col items-center gap-5 text-center"
             >
-              <div className="w-16 h-16 rounded-2xl bg-white/5 flex items-center justify-center text-2xl border border-white/10 shadow-lg shadow-black/20">
+              <div className="w-16 h-16 rounded-2xl clay-panel-sm flex items-center justify-center text-2xl">
                 🎉
               </div>
               <div>
-                <p className="font-semibold text-white">No pending requests</p>
-                <p className="text-sm text-gray-400 mt-1">When someone adds you, they'll appear here.</p>
+                <p className="font-bold text-text">No pending requests</p>
+                <p className="text-sm font-medium text-text-muted mt-1">When someone adds you, they'll appear here.</p>
               </div>
             </motion.div>
           )}
@@ -140,25 +140,25 @@ export default function RequestModal({ onClose }: { onClose: () => void }) {
                 initial={{ opacity: 0, x: -20 }}
                 animate={{ opacity: 1, x: 0 }}
                 exit={{ opacity: 0, scale: 0.95 }}
-                className="flex items-center justify-between gap-4 p-4 rounded-2xl bg-white/5 border border-white/10 hover:bg-white/10 transition-all"
+                className="flex items-center justify-between gap-4 p-4 clay-panel-sm transition-all"
               >
                 {/* Avatar + name */}
                 <div className="flex items-center gap-4 min-w-0">
-                  <div className="w-12 h-12 rounded-full bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center font-bold text-lg text-white shadow-lg flex-shrink-0">
+                  <div className="w-12 h-12 rounded-full bg-primary flex items-center justify-center font-bold text-lg text-white shadow-[var(--clay-shadow-sm)] flex-shrink-0">
                     {req.requester.username.charAt(0).toUpperCase()}
                   </div>
                   <div className="flex flex-col min-w-0">
-                    <span className="font-semibold text-white truncate">
+                    <span className="font-bold text-text truncate">
                       {req.requester.username}
                     </span>
-                    <span className="text-xs text-gray-400 truncate">Wants to connect</span>
+                    <span className="text-xs font-bold text-text-muted truncate">Wants to connect</span>
                   </div>
                 </div>
 
                 {/* Accept button */}
                 <button
                   onClick={() => acceptRequest(req.id)}
-                  className="flex-shrink-0 px-4 py-2 bg-indigo-500 hover:bg-indigo-400 text-white rounded-xl text-sm font-semibold transition-all shadow-[0_0_15px_rgba(99,102,241,0.4)]"
+                  className="clay-button-primary !py-2 !px-4 !text-sm flex-shrink-0"
                 >
                   Accept
                 </button>

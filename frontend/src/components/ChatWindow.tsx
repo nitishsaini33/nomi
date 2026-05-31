@@ -178,7 +178,7 @@ const MessageBubble = memo(function MessageBubble({
           
           {/* Display Reactions */}
           {!msg.is_deleted && msg.reactions && msg.reactions.length > 0 && (
-            <div className={`absolute -bottom-4 ${isMe ? 'right-1' : 'right-1'} flex items-center gap-0.5 z-10 bg-[#0f172a] border border-white/10 px-2 py-1 rounded-full shadow-lg`}>
+            <div className={`absolute -bottom-4 ${isMe ? 'right-1' : 'right-1'} flex items-center gap-0.5 z-10 clay-panel-sm px-2 py-1`}>
               {msg.reactions.map((r: any) => (
                 <span 
                   key={r.id} 
@@ -428,34 +428,34 @@ export default function ChatWindow({
   }
 
   return (
-    <div className="flex flex-col h-full w-full overflow-hidden bg-transparent text-white relative">
+    <div className="flex flex-col h-full w-full overflow-hidden bg-transparent text-text relative">
       {/* ── Header ── */}
-      <div className="flex-shrink-0 flex items-center px-2 sm:px-4 py-2 sm:py-3 border-b border-white/5 bg-white/5 backdrop-blur-md z-10 shadow-sm">
+      <div className="flex-shrink-0 flex items-center px-2 sm:px-4 py-2 sm:py-3 border-b border-black/5 dark:border-white/5 z-10 bg-surface">
         <div className="flex items-center flex-1 min-w-0 gap-2 cursor-pointer">
           <button
             onClick={() => router.push('/dashboard')}
-            className="md:hidden p-2 rounded-full hover:bg-white/10 transition-colors flex-shrink-0"
+            className="md:hidden p-2 rounded-full hover:bg-black/5 dark:hover:bg-white/5 transition-colors flex-shrink-0 text-text-muted"
           >
             <ArrowLeft size={22} />
           </button>
           
           {/* Avatar */}
           <div className="relative flex-shrink-0">
-            <div className="w-10 h-10 rounded-full bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center font-bold text-white shadow-lg">
+            <div className="w-10 h-10 rounded-full bg-primary flex items-center justify-center font-bold text-white shadow-[var(--clay-shadow-sm)]">
               {otherUser.username.charAt(0).toUpperCase()}
             </div>
             {onlineUsers[otherUserId] && (
-              <div className="absolute bottom-0 right-0 w-3 h-3 bg-emerald-400 rounded-full border-2 border-[#0B0F19]" />
+              <div className="absolute bottom-0 right-0 w-3 h-3 bg-green-400 rounded-full border-[3px] border-surface" />
             )}
           </div>
 
           <div className="flex flex-col flex-1 min-w-0 ml-1">
-            <div className="font-semibold text-base text-white truncate">
+            <div className="font-bold text-base text-text truncate">
               {otherUser.username}
             </div>
-            <div className="text-xs text-gray-400">
+            <div className="text-xs text-text-muted">
               {onlineUsers[otherUserId] ? (
-                <span className="text-emerald-400 font-medium">Online</span>
+                <span className="text-primary font-bold">Online</span>
               ) : (
                 <span>Offline</span>
               )}
@@ -482,7 +482,7 @@ export default function ChatWindow({
       >
         {isLoadingMore && (
           <div className="flex justify-center py-2">
-            <div className="bg-black/20 backdrop-blur-md px-3 py-1 rounded-full border border-white/10 text-xs text-gray-400">
+            <div className="clay-panel-sm px-4 py-1 text-xs font-bold text-text-muted">
               Loading history...
             </div>
           </div>
@@ -514,15 +514,14 @@ export default function ChatWindow({
             animate={{ opacity: 1, scale: 1 }}
             className="flex flex-col items-center justify-center h-full text-center p-6 mt-10"
           >
-            <div className="w-16 h-16 rounded-full bg-white/5 flex items-center justify-center mb-4 border border-white/10">
-              <Smile size={24} className="text-indigo-400" />
+            <div className="w-16 h-16 rounded-full clay-panel-sm flex items-center justify-center mb-4 text-primary">
+              <Smile size={28} />
             </div>
-            <h3 className="text-lg font-semibold text-white mb-1">Say Hello!</h3>
-            <p className="text-sm text-gray-400">Send the first message to start the conversation.</p>
+            <h3 className="text-lg font-bold text-text mb-1">Say Hello!</h3>
+            <p className="text-sm font-medium text-text-muted">Send the first message to start the conversation.</p>
           </motion.div>
         )}
         
-        {/* ── Typing Indicator ── */}
         <AnimatePresence>
           {typingUsers[otherUserId] && (
             <motion.div 
@@ -531,10 +530,10 @@ export default function ChatWindow({
               exit={{ opacity: 0, scale: 0.9 }}
               className="flex justify-start mb-4"
             >
-              <div className="bg-white/5 backdrop-blur-md border border-white/10 rounded-2xl rounded-tl-sm px-4 py-3 flex items-center gap-1.5 shadow-sm">
-                <span className="w-1.5 h-1.5 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: '0ms' }} />
-                <span className="w-1.5 h-1.5 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: '150ms' }} />
-                <span className="w-1.5 h-1.5 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: '300ms' }} />
+              <div className="clay-panel-sm rounded-tl-sm px-4 py-3 flex items-center gap-1.5 shadow-sm">
+                <span className="w-1.5 h-1.5 bg-primary rounded-full animate-bounce" style={{ animationDelay: '0ms' }} />
+                <span className="w-1.5 h-1.5 bg-primary rounded-full animate-bounce" style={{ animationDelay: '150ms' }} />
+                <span className="w-1.5 h-1.5 bg-primary rounded-full animate-bounce" style={{ animationDelay: '300ms' }} />
               </div>
             </motion.div>
           )}
@@ -544,7 +543,7 @@ export default function ChatWindow({
       </div>
 
       {/* ── Input Area ── */}
-      <div className="flex-shrink-0 px-2 py-2 sm:px-4 sm:py-4 bg-gradient-to-t from-[#0B0F19] to-transparent z-10 relative">
+      <div className="flex-shrink-0 px-2 py-2 sm:px-4 sm:py-4 bg-gradient-to-t from-background to-transparent z-10 relative">
         {/* Emoji Picker Popup */}
         <AnimatePresence>
           {showEmojiPicker && (
@@ -571,11 +570,11 @@ export default function ChatWindow({
           className="flex items-end gap-2"
         >
           {/* Input Pill */}
-          <div className="flex-1 flex items-center gap-1 sm:gap-2 bg-[#1E293B]/80 backdrop-blur-xl border border-white/10 rounded-[24px] px-2 sm:px-3 py-1 shadow-lg min-h-[48px]">
+          <div className="flex-1 flex items-center gap-1 sm:gap-2 clay-panel-sm rounded-[1.25rem] px-2 sm:px-3 py-1 min-h-[48px]">
             <button 
               type="button" 
               onClick={() => setShowEmojiPicker(prev => !prev)}
-              className={`p-1.5 transition-colors flex-shrink-0 ${showEmojiPicker ? 'text-emerald-400' : 'text-gray-400 hover:text-white'}`}
+              className={`p-1.5 transition-colors flex-shrink-0 ${showEmojiPicker ? 'text-primary' : 'text-text-muted hover:text-primary'}`}
             >
               <Smile size={24} />
             </button>
@@ -586,7 +585,7 @@ export default function ChatWindow({
               onChange={handleInputChange}
               onFocus={() => setShowEmojiPicker(false)}
               placeholder="Message"
-              className="flex-1 bg-transparent text-white px-1 py-2 text-[15px] sm:text-base outline-none placeholder-gray-400 w-full"
+              className="flex-1 bg-transparent text-text px-1 py-2 text-[15px] sm:text-base outline-none placeholder-text-muted w-full font-medium"
               autoComplete="off"
             />
           </div>
@@ -598,10 +597,10 @@ export default function ChatWindow({
             onMouseDown={(e) => {
               e.preventDefault(); // Prevents focus loss on desktop
             }}
-            className={`w-12 h-12 rounded-full flex items-center justify-center flex-shrink-0 shadow-lg transition-all ${
+            className={`w-12 h-12 rounded-[1rem] flex items-center justify-center flex-shrink-0 transition-all ${
               input.trim() 
-                ? 'bg-emerald-500 hover:bg-emerald-400 text-white shadow-emerald-500/25' 
-                : 'bg-[#1E293B]/80 backdrop-blur-xl text-gray-400 border border-white/10 opacity-50'
+                ? 'clay-button-primary' 
+                : 'clay-button !p-0 opacity-60'
             }`}
             aria-label="Send message"
           >

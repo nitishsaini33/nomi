@@ -7,6 +7,7 @@ import { useRouter, usePathname } from 'next/navigation';
 import { useChatStore } from '@/store/chatStore';
 import { motion, AnimatePresence } from 'framer-motion';
 
+import { ThemeToggle } from './ThemeToggle';
 import ConfirmModal from './ConfirmModal';
 
 /** Returns a compact relative time string */
@@ -150,7 +151,7 @@ export default function Sidebar({ user }: { user: any }) {
   }, [friends, unreadCounts, lastMessageTimes]);
 
   return (
-    <div className="h-full flex flex-col bg-transparent text-white w-full">
+    <div className="h-full flex flex-col bg-transparent text-text w-full">
       {/* ── Brand & Actions Header ── */}
       <div className="flex-shrink-0 flex justify-between items-center px-4 sm:px-6 pt-5 pb-3 bg-transparent">
         <button 
@@ -158,49 +159,47 @@ export default function Sidebar({ user }: { user: any }) {
           className="flex items-center gap-3 cursor-pointer group text-left"
           title="Go to Dashboard"
         >
-          <img src="/logo.png" alt="Nomihub Logo" className="w-8 h-8 object-cover rounded-xl shadow-sm border border-white/10 group-hover:opacity-90 transition-opacity" />
-          <h1 className="font-bold text-xl tracking-tight bg-clip-text text-transparent bg-gradient-to-r from-indigo-400 to-purple-400 group-hover:from-indigo-300 group-hover:to-purple-300 transition-all">
+          <img src="/logo.png" alt="Nomihub Logo" className="w-8 h-8 object-cover rounded-xl shadow-sm border border-black/5 dark:border-white/5 group-hover:opacity-90 transition-opacity" />
+          <h1 className="font-bold text-xl tracking-tight text-primary group-hover:brightness-110 transition-all">
             Nomihub
           </h1>
         </button>
         
-        <div className="flex gap-2">
+        <div className="flex gap-2 items-center">
+          <ThemeToggle />
           <motion.button
-            whileHover={{ scale: 1.05 }}
             whileTap={{ scale: 0.95 }}
             onClick={() => {
               setIsModalOpen(true);
               setPendingRequestCount(0);
             }}
             title="Friend Requests"
-            className="relative p-2 rounded-xl bg-white/5 hover:bg-white/10 border border-white/10 hover:border-indigo-500/50 hover:text-indigo-400 transition-colors"
+            className="relative !p-2.5 clay-button text-text-muted hover:text-primary transition-colors"
           >
             <UserPlus size={18} />
             {pendingRequestCount > 0 && (
               <motion.span 
                 initial={{ scale: 0 }}
                 animate={{ scale: 1 }}
-                className="absolute -top-1 -right-1 min-w-[18px] h-[18px] bg-indigo-500 rounded-full font-bold text-[10px] flex items-center justify-center border border-indigo-400 shadow-[0_0_10px_rgba(99,102,241,0.5)]"
+                className="absolute -top-1 -right-1 min-w-[18px] h-[18px] bg-primary rounded-full font-bold text-[10px] flex items-center justify-center text-white"
               >
                 {pendingRequestCount > 9 ? '9+' : pendingRequestCount}
               </motion.span>
             )}
           </motion.button>
           <motion.button
-            whileHover={{ scale: 1.05 }}
             whileTap={{ scale: 0.95 }}
             onClick={handleDeleteAccount}
             title="Delete Account"
-            className="p-2 rounded-xl bg-white/5 hover:bg-red-500/20 border border-white/10 hover:border-red-500/50 hover:text-red-400 transition-colors"
+            className="!p-2.5 clay-button text-text-muted hover:text-red-500 transition-colors"
           >
             <Trash2 size={18} />
           </motion.button>
           <motion.button
-            whileHover={{ scale: 1.05 }}
             whileTap={{ scale: 0.95 }}
             onClick={handleLogout}
             title="Logout"
-            className="p-2 rounded-xl bg-white/5 hover:bg-white/10 border border-white/10 hover:border-white/20 transition-colors"
+            className="!p-2.5 clay-button text-text-muted hover:text-primary transition-colors"
           >
             <LogOut size={18} />
           </motion.button>
@@ -208,22 +207,17 @@ export default function Sidebar({ user }: { user: any }) {
       </div>
 
       {/* ── User Header ── */}
-      <div className="flex-shrink-0 px-4 sm:px-6 pb-4 border-b border-white/5">
-        <div className="font-bold text-lg md:text-xl truncate text-white uppercase tracking-wider">
+      <div className="flex-shrink-0 px-4 sm:px-6 pb-4 border-b border-black/5 dark:border-white/5">
+        <div className="font-bold text-lg md:text-xl truncate text-text uppercase tracking-wider">
           {user.username}
         </div>
       </div>
 
       <div className="flex-shrink-0 px-4 sm:px-6 py-4">
         <form onSubmit={handleSearch} className="relative">
-          <motion.div 
-            animate={{ 
-              boxShadow: isSearchFocused ? '0 0 0 2px rgba(99,102,241,0.4)' : '0 0 0 0px rgba(99,102,241,0)'
-            }}
-            className="relative rounded-full"
-          >
-            <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-              <Search size={16} className={`transition-colors ${isSearchFocused ? 'text-indigo-400' : 'text-gray-400'}`} />
+          <div className="relative rounded-full">
+            <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none z-10">
+              <Search size={16} className={`transition-colors ${isSearchFocused ? 'text-primary' : 'text-text-muted'}`} />
             </div>
             <input
               type="text"
@@ -232,31 +226,31 @@ export default function Sidebar({ user }: { user: any }) {
               onBlur={() => setIsSearchFocused(false)}
               onChange={(e) => setSearch(e.target.value)}
               placeholder="Search users..."
-              className="glass-input !pl-10 text-sm py-2.5 rounded-full transition-all"
+              className="clay-input !pl-10 text-sm py-3 transition-all"
             />
-          </motion.div>
+          </div>
         </form>
       </div>
 
       {/* ── Search Results ── */}
       {searchResults.length > 0 && (
-        <div className="flex-shrink-0 mx-4 sm:mx-6 mb-4 rounded-xl bg-white/5 border border-white/10 overflow-hidden backdrop-blur-md">
-          <div className="flex justify-between items-center px-4 py-2 border-b border-white/5 bg-white/5">
-            <span className="text-xs font-semibold text-gray-400 uppercase tracking-wider">Results</span>
+        <div className="flex-shrink-0 mx-4 sm:mx-6 mb-4 clay-panel-sm overflow-hidden">
+          <div className="flex justify-between items-center px-4 py-3 border-b border-black/5 dark:border-white/5">
+            <span className="text-xs font-bold text-text-muted uppercase tracking-wider">Results</span>
             <button
               onClick={() => setSearchResults([])}
-              className="text-xs font-medium text-indigo-400 hover:text-indigo-300"
+              className="text-xs font-bold text-primary hover:brightness-110"
             >
               Clear
             </button>
           </div>
           <div className="max-h-40 overflow-y-auto no-scrollbar">
             {searchResults.map((r: any) => (
-              <div key={r.id} className="flex justify-between items-center px-4 py-3 border-b border-white/5 last:border-0 hover:bg-white/5 transition-colors">
-                <span className="font-medium text-sm truncate flex-1 mr-2">{r.username}</span>
+              <div key={r.id} className="flex justify-between items-center px-4 py-3 border-b border-black/5 dark:border-white/5 last:border-0">
+                <span className="font-bold text-sm truncate flex-1 mr-2 text-text uppercase">{r.username}</span>
                 <button
                   onClick={() => sendRequest(r.id)}
-                  className="px-3 py-1.5 rounded-lg bg-indigo-500/20 text-indigo-300 hover:bg-indigo-500 hover:text-white border border-indigo-500/30 transition-all text-xs font-medium"
+                  className="clay-button-primary !py-1.5 !px-4 !text-xs !rounded-lg"
                 >
                   Add
                 </button>
@@ -269,7 +263,7 @@ export default function Sidebar({ user }: { user: any }) {
       {/* ── Friends List ── */}
       <div className="flex-1 overflow-y-auto no-scrollbar px-2 pb-4">
         <div className="px-4 py-2 mb-2">
-          <h3 className="text-xs font-semibold text-gray-400 uppercase tracking-wider">Messages</h3>
+          <h3 className="text-xs font-bold text-text-muted uppercase tracking-wider">Messages</h3>
         </div>
 
         <motion.div 
@@ -278,7 +272,7 @@ export default function Sidebar({ user }: { user: any }) {
           variants={{
             visible: { transition: { staggerChildren: 0.05 } }
           }}
-          className="space-y-1"
+          className="space-y-2"
         >
           {sortedFriends.map((f: any) => {
             const unread   = unreadCounts[f.id] || 0;
@@ -291,20 +285,19 @@ export default function Sidebar({ user }: { user: any }) {
                   hidden: { opacity: 0, x: -20 },
                   visible: { opacity: 1, x: 0 }
                 }}
-                whileHover={{ scale: 1.015, x: 4 }}
                 whileTap={{ scale: 0.98 }}
                 key={f.id}
                 onClick={() => router.push(`/dashboard/chat/${f.id}`)}
-                className={`w-full text-left p-3 mx-2 rounded-xl transition-all group relative flex items-center gap-3 border ${
+                className={`w-full text-left p-3 mx-2 rounded-[1.25rem] transition-all group relative flex items-center gap-3 ${
                   isActive 
-                    ? 'bg-white/10 border-white/20 shadow-[0_4px_20px_rgba(0,0,0,0.2)]' 
-                    : 'bg-transparent border-transparent hover:bg-white/5 hover:border-white/5'
+                    ? 'clay-panel-sm' 
+                    : 'bg-transparent border-transparent hover:shadow-[var(--clay-shadow-sm)] hover:bg-surface'
                 }`}
                 style={{ width: 'calc(100% - 16px)' }}
               >
                 {/* Avatar with online indicator */}
                 <div className="relative flex-shrink-0">
-                  <div className="w-10 h-10 rounded-full bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center font-bold text-white shadow-lg">
+                  <div className="w-11 h-11 rounded-full bg-primary flex items-center justify-center font-bold text-white shadow-[var(--clay-shadow-sm)]">
                     {f.username.charAt(0).toUpperCase()}
                   </div>
                   {onlineUsers[f.id] && (
@@ -312,7 +305,7 @@ export default function Sidebar({ user }: { user: any }) {
                       initial={{ scale: 0 }}
                       animate={{ scale: 1 }}
                       transition={{ type: "spring", stiffness: 500, damping: 20 }}
-                      className="absolute bottom-0 right-0 w-3 h-3 bg-cyan-400 rounded-full border-2 border-[#0B0F19] shadow-[0_0_8px_rgba(6,182,212,0.6)]" 
+                      className="absolute bottom-0 right-0 w-3.5 h-3.5 bg-green-400 rounded-full border-[3px] border-surface" 
                     />
                   )}
                 </div>
@@ -320,19 +313,19 @@ export default function Sidebar({ user }: { user: any }) {
                 {/* Content */}
                 <div className="flex-1 min-w-0">
                   <div className="flex justify-between items-baseline mb-0.5">
-                    <span className={`font-semibold text-sm truncate transition-colors ${isActive ? 'text-indigo-300' : 'text-white group-hover:text-indigo-200'}`}>
+                    <span className={`font-bold text-sm truncate transition-colors uppercase ${isActive ? 'text-primary' : 'text-text'}`}>
                       {f.username}
                     </span>
                     {lastTime > 0 && (
-                      <span className={`text-[10px] font-medium tabular-nums whitespace-nowrap ml-2 ${isActive ? 'text-indigo-300' : 'text-gray-500'}`}>
+                      <span className={`text-[10px] font-medium tabular-nums whitespace-nowrap ml-2 ${isActive ? 'text-primary' : 'text-text-muted'}`}>
                         {timeAgo(lastTime)}
                       </span>
                     )}
                   </div>
-                  <div className="flex justify-between items-center h-4">
-                    <p className={`text-xs truncate pr-2 transition-colors ${isActive ? 'text-indigo-100/70' : 'text-gray-400'}`}>
+                  <div className="flex justify-between items-center h-4 mt-1">
+                    <p className={`text-xs font-medium truncate pr-2 transition-colors ${isActive ? 'text-primary opacity-80' : 'text-text-muted'}`}>
                       {unread > 0 ? (
-                        <span className="text-indigo-400 font-medium">New messages</span>
+                        <span className="text-primary font-bold">New messages</span>
                       ) : (
                         'Tap to chat'
                       )}
@@ -341,7 +334,7 @@ export default function Sidebar({ user }: { user: any }) {
                       <motion.span 
                         initial={{ scale: 0 }}
                         animate={{ scale: 1 }}
-                        className="min-w-[18px] h-[18px] px-1 rounded-full bg-indigo-500 text-white font-bold text-[10px] flex items-center justify-center shadow-[0_0_10px_rgba(99,102,241,0.5)] flex-shrink-0"
+                        className="min-w-[20px] h-[20px] px-1.5 rounded-full bg-primary text-white font-bold text-[10px] flex items-center justify-center shadow-[var(--clay-shadow-sm)] flex-shrink-0"
                       >
                         {unread > 9 ? '9+' : unread}
                       </motion.span>
@@ -358,11 +351,11 @@ export default function Sidebar({ user }: { user: any }) {
               animate={{ opacity: 1, y: 0 }}
               className="flex flex-col items-center justify-center py-10 px-4 text-center"
             >
-              <div className="w-12 h-12 rounded-full bg-white/5 flex items-center justify-center mb-3 text-gray-500">
+              <div className="w-12 h-12 rounded-full clay-panel-sm flex items-center justify-center mb-3 text-text-muted">
                 <Search size={20} />
               </div>
-              <p className="text-sm font-medium text-gray-300">No friends yet</p>
-              <p className="text-xs text-gray-500 mt-1">Search above to connect</p>
+              <p className="text-sm font-bold text-text">No friends yet</p>
+              <p className="text-xs text-text-muted mt-1">Search above to connect</p>
             </motion.div>
           )}
         </motion.div>

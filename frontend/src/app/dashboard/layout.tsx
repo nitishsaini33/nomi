@@ -134,11 +134,11 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   if (!user) return null;
 
   return (
-    <div className="h-[100dvh] flex w-full overflow-hidden md:p-4 md:gap-4 relative text-white">
+    <div className="h-[100dvh] flex w-full overflow-hidden md:p-4 md:gap-6 relative text-text bg-background">
       {/* Sidebar panel */}
       <div
         className={[
-          'w-full md:w-[320px] lg:w-[360px] h-full flex-shrink-0 z-10 md:rounded-2xl overflow-hidden glass-panel flex flex-col',
+          'w-full md:w-[320px] lg:w-[360px] h-full flex-shrink-0 z-10 md:rounded-3xl overflow-hidden clay-panel flex flex-col',
           isInChat ? 'hidden md:flex' : 'flex',
         ].join(' ')}
       >
@@ -148,7 +148,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
       {/* Chat / content panel */}
       <div
         className={[
-          'flex-1 h-full overflow-hidden flex flex-col z-10 md:rounded-2xl glass-panel relative',
+          'flex-1 h-full overflow-hidden flex flex-col z-10 md:rounded-3xl clay-panel relative',
           isInChat ? 'flex' : 'hidden md:flex',
         ].join(' ')}
       >

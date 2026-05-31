@@ -96,17 +96,17 @@ export default function Register() {
   };
 
   return (
-    <div className="min-h-dvh flex items-center justify-center p-4 relative overflow-hidden">
+    <div className="min-h-dvh flex items-center justify-center p-4 relative overflow-hidden bg-background">
       <motion.div 
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.5, ease: "easeOut" }}
-        className="relative z-10 glass-panel p-8 sm:p-10 w-full max-w-md rounded-3xl"
+        className="relative z-10 clay-panel p-8 sm:p-10 w-full max-w-md"
       >
         {step === 2 && (
           <button 
             onClick={() => { setStep(1); setError(''); setSuccess(''); }}
-            className="mb-6 flex items-center gap-1 text-sm font-medium text-gray-400 hover:text-white transition-colors"
+            className="mb-6 flex items-center gap-1 text-sm font-medium text-text-muted hover:text-primary transition-colors"
           >
             <ArrowLeft size={16} /> Back
           </button>
@@ -114,12 +114,12 @@ export default function Register() {
 
         <div className="text-center mb-8">
           <div className="flex justify-center mb-6">
-            <img src="/logo.png" alt="Nomihub Logo" className="w-16 h-16 rounded-2xl shadow-lg border border-white/10" />
+            <img src="/logo.png" alt="Nomihub Logo" className="w-16 h-16 rounded-2xl shadow-sm border border-black/5 dark:border-white/5" />
           </div>
-          <h2 className="text-3xl sm:text-4xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-indigo-400 to-purple-400 mb-2">
+          <h2 className="text-3xl sm:text-4xl font-bold text-primary mb-2">
             {step === 1 ? 'Create Account' : 'Verify Email'}
           </h2>
-          <p className="text-sm text-gray-400">
+          <p className="text-sm text-text-muted">
             {step === 1 ? 'Join the next-gen chat experience' : 'Almost there!'}
           </p>
         </div>
@@ -131,7 +131,7 @@ export default function Register() {
               initial={{ opacity: 0, height: 0 }}
               animate={{ opacity: 1, height: 'auto' }}
               exit={{ opacity: 0, height: 0 }}
-              className="bg-red-500/20 border border-red-500/50 text-red-200 p-3 mb-6 rounded-xl text-sm text-center backdrop-blur-md"
+              className="bg-red-500/10 border border-red-500/20 text-red-500 p-3 mb-6 rounded-xl text-sm text-center"
             >
               {error}
             </motion.div>
@@ -142,7 +142,7 @@ export default function Register() {
               initial={{ opacity: 0, height: 0 }}
               animate={{ opacity: 1, height: 'auto' }}
               exit={{ opacity: 0, height: 0 }}
-              className="bg-emerald-500/20 border border-emerald-500/50 text-emerald-200 p-3 mb-6 rounded-xl text-sm text-center backdrop-blur-md"
+              className="bg-emerald-500/10 border border-emerald-500/20 text-emerald-500 p-3 mb-6 rounded-xl text-sm text-center"
             >
               {success}
             </motion.div>
@@ -160,10 +160,10 @@ export default function Register() {
               className="space-y-4"
             >
               <div className="flex flex-col gap-2">
-                <label className="text-sm font-medium text-gray-300 ml-1">Username</label>
+                <label className="text-sm font-medium text-text-muted ml-1">Username</label>
                 <input
                   type="text"
-                  className="glass-input"
+                  className="clay-input"
                   value={username}
                   onChange={(e) => setUsername(e.target.value)}
                   placeholder="e.g. john_doe"
@@ -175,10 +175,10 @@ export default function Register() {
               </div>
 
               <div className="flex flex-col gap-2">
-                <label className="text-sm font-medium text-gray-300 ml-1">Email</label>
+                <label className="text-sm font-medium text-text-muted ml-1">Email</label>
                 <input
                   type="email"
-                  className="glass-input"
+                  className="clay-input"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   placeholder="e.g. john@example.com"
@@ -189,10 +189,10 @@ export default function Register() {
 
               <div className="grid grid-cols-2 gap-4">
                 <div className="flex flex-col gap-2">
-                  <label className="text-sm font-medium text-gray-300 ml-1">Password</label>
+                  <label className="text-sm font-medium text-text-muted ml-1">Password</label>
                   <input
                     type="password"
-                    className="glass-input"
+                    className="clay-input"
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
                     placeholder="Min 6 chars"
@@ -202,10 +202,10 @@ export default function Register() {
                   />
                 </div>
                 <div className="flex flex-col gap-2">
-                  <label className="text-sm font-medium text-gray-300 ml-1">Confirm</label>
+                  <label className="text-sm font-medium text-text-muted ml-1">Confirm</label>
                   <input
                     type="password"
-                    className="glass-input"
+                    className="clay-input"
                     value={confirmPassword}
                     onChange={(e) => setConfirmPassword(e.target.value)}
                     placeholder="Repeat"
@@ -219,7 +219,7 @@ export default function Register() {
               <button
                 type="submit"
                 disabled={loading}
-                className="glass-button w-full py-3.5 text-base mt-6 disabled:opacity-60 disabled:cursor-not-allowed"
+                className="clay-button-primary w-full py-3.5 text-base mt-6"
               >
                 {loading ? (
                   <span className="flex items-center gap-2">
@@ -238,15 +238,15 @@ export default function Register() {
               onSubmit={handleVerifyOTP} 
               className="space-y-6"
             >
-              <p className="text-sm text-gray-300 text-center leading-relaxed">
-                We've sent a 6-digit code to <span className="text-indigo-400 font-medium">{email}</span>.<br/>
+              <p className="text-sm text-text-muted text-center leading-relaxed">
+                We've sent a 6-digit code to <span className="text-primary font-medium">{email}</span>.<br/>
                 Please enter it below.
               </p>
 
               <div className="flex flex-col gap-2 mt-4">
                 <input
                   type="text"
-                  className="glass-input text-3xl tracking-[0.5em] text-center font-bold py-4 bg-black/40"
+                  className="clay-input text-3xl tracking-[0.5em] text-center font-bold py-4"
                   value={otp}
                   onChange={(e) => setOtp(e.target.value.replace(/[^0-9]/g, ''))}
                   placeholder="000000"
@@ -259,7 +259,7 @@ export default function Register() {
               <button
                 type="submit"
                 disabled={loading || otp.length !== 6}
-                className="glass-button w-full py-3.5 text-base mt-4 !from-emerald-500 !to-teal-600 hover:!from-emerald-400 hover:!to-teal-500 disabled:opacity-60 disabled:cursor-not-allowed"
+                className="clay-button-primary w-full py-3.5 text-base mt-4"
               >
                 {loading ? (
                   <span className="flex items-center gap-2">
@@ -272,11 +272,11 @@ export default function Register() {
           )}
         </AnimatePresence>
 
-        <div className="mt-8 text-center text-sm text-gray-400">
+        <div className="mt-8 text-center text-sm text-text-muted">
           Already have an account?{' '}
           <Link
             href="/login"
-            className="text-indigo-400 font-medium hover:text-indigo-300 transition-colors"
+            className="text-primary font-bold hover:brightness-110 transition-all"
           >
             Sign in
           </Link>

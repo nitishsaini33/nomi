@@ -1,18 +1,64 @@
 @import "tailwindcss";
 
 @theme {
-  --color-background: #0B0F19; /* Deep cosmic dark blue */
-  --color-surface: rgba(255, 255, 255, 0.05); /* Light translucent glass */
-  --color-primary: #6366F1; /* Indigo */
-  --color-primary-hover: #8B5CF6; /* Purple */
-  --color-text: #FFFFFF;
-  --color-text-muted: #94A3B8; /* Slate 400 */
-  --color-accent: #06b6d4; /* Cyan */
-
+  --color-background: var(--bg-color);
+  --color-surface: var(--surface-color);
+  --color-primary: var(--primary-color);
+  --color-primary-hover: var(--primary-hover);
+  --color-text: var(--text-color);
+  --color-text-muted: var(--text-muted);
+  --color-accent: var(--accent-color);
+  
   --font-sans: var(--font-inter), system-ui, -apple-system, sans-serif;
 }
 
 @layer base {
+  :root {
+    /* LIGHT THEME (Soft Neumorphic/Claymorphic) */
+    --bg-color: #e0e5ec;
+    --surface-color: #e0e5ec;
+    --primary-color: #6366f1;
+    --primary-hover: #818cf8;
+    --text-color: #2d3748;
+    --text-muted: #718096;
+    --accent-color: #06b6d4;
+    
+    --shadow-light: #ffffff;
+    --shadow-dark: #a3b1c6;
+    
+    --clay-shadow: 9px 9px 16px var(--shadow-dark), -9px -9px 16px var(--shadow-light);
+    --clay-shadow-sm: 5px 5px 10px var(--shadow-dark), -5px -5px 10px var(--shadow-light);
+    --clay-shadow-lg: 12px 12px 24px var(--shadow-dark), -12px -12px 24px var(--shadow-light);
+    
+    --clay-inset: inset 6px 6px 12px var(--shadow-dark), inset -6px -6px 12px var(--shadow-light);
+    --clay-inset-sm: inset 3px 3px 6px var(--shadow-dark), inset -3px -3px 6px var(--shadow-light);
+    
+    --clay-btn-shadow: 6px 6px 12px var(--shadow-dark), -6px -6px 12px var(--shadow-light);
+  }
+
+  .dark {
+    /* DARK THEME (Sleek Neumorphic/Claymorphic) */
+    --bg-color: #212428;
+    --surface-color: #212428;
+    --primary-color: #818cf8;
+    --primary-hover: #6366f1;
+    --text-color: #e2e8f0;
+    --text-muted: #94a3b8;
+    --accent-color: #22d3ee;
+    
+    --shadow-light: #2b2f34;
+    --shadow-dark: #17191c;
+    
+    --clay-shadow: 9px 9px 16px var(--shadow-dark), -9px -9px 16px var(--shadow-light);
+    --clay-shadow-sm: 5px 5px 10px var(--shadow-dark), -5px -5px 10px var(--shadow-light);
+    --clay-shadow-lg: 12px 12px 24px var(--shadow-dark), -12px -12px 24px var(--shadow-light);
+    
+    --clay-inset: inset 6px 6px 12px var(--shadow-dark), inset -6px -6px 12px var(--shadow-light);
+    --clay-inset-sm: inset 3px 3px 6px var(--shadow-dark), inset -3px -3px 6px var(--shadow-light);
+    
+    --clay-btn-shadow: 6px 6px 12px var(--shadow-dark), -6px -6px 12px var(--shadow-light);
+  }
+
   *,
   *::before,
   *::after {
@@ -27,20 +73,15 @@
   }
 
   body {
-    background-color: var(--color-background);
-    color: var(--color-text);
+    background-color: var(--bg-color);
+    color: var(--text-color);
     font-family: var(--font-sans);
     min-height: 100%;
-    /* Dark cosmic background with subtle mesh gradients */
-    background-image: 
-      radial-gradient(circle at 15% 50%, rgba(99, 102, 241, 0.15), transparent 25%),
-      radial-gradient(circle at 85% 30%, rgba(139, 92, 246, 0.15), transparent 25%);
-    background-attachment: fixed;
+    transition: background-color 0.3s ease, color 0.3s ease;
   }
 }
 
 @layer utilities {
-  /* Hide scrollbar but keep functionality */
   .no-scrollbar::-webkit-scrollbar {
     display: none;
   }
@@ -49,55 +90,59 @@
     scrollbar-width: none;
   }
 
-  /* Glass Panel */
-  .glass-panel {
-    background: rgba(255, 255, 255, 0.03);
-    backdrop-filter: blur(16px);
-    -webkit-backdrop-filter: blur(16px);
-    border: 1px solid rgba(255, 255, 255, 0.08);
-    box-shadow: 0 4px 30px rgba(0, 0, 0, 0.1);
+  /* Clay Panel / Card */
+  .clay-panel {
+    background-color: var(--surface-color);
+    border-radius: 1.5rem;
+    box-shadow: var(--clay-shadow);
     transition: all 0.3s ease;
+    border: none;
   }
   
-  .glass-panel-hover:hover {
-    background: rgba(255, 255, 255, 0.08);
-    border: 1px solid rgba(255, 255, 255, 0.15);
+  .clay-panel-sm {
+    background-color: var(--surface-color);
+    border-radius: 1rem;
+    box-shadow: var(--clay-shadow-sm);
+    transition: all 0.3s ease;
+    border: none;
   }
 
-  /* Glass Input */
-  .glass-input {
-    background: rgba(0, 0, 0, 0.2);
-    backdrop-filter: blur(8px);
-    -webkit-backdrop-filter: blur(8px);
-    border: 1px solid rgba(255, 255, 255, 0.1);
-    color: var(--color-text);
-    padding: 0.75rem 1rem;
-    border-radius: 0.75rem;
+  .clay-panel-hover:hover {
+    box-shadow: var(--clay-shadow-lg);
+    transform: translateY(-2px);
+  }
+
+  /* Clay Input */
+  .clay-input {
+    background-color: var(--surface-color);
+    color: var(--text-color);
+    padding: 0.85rem 1.25rem;
+    border-radius: 1rem;
+    box-shadow: var(--clay-inset);
+    border: none;
     transition: all 0.3s ease;
     width: 100%;
     outline: none;
   }
 
-  .glass-input:focus {
-    border-color: rgba(99, 102, 241, 0.5); /* Indigo glow */
-    box-shadow: 0 0 0 2px rgba(99, 102, 241, 0.2);
-    background: rgba(0, 0, 0, 0.3);
+  .clay-input:focus {
+    box-shadow: var(--clay-inset-sm), inset 0 0 0 2px rgba(99, 102, 241, 0.4);
   }
 
-  .glass-input::placeholder {
-    color: var(--color-text-muted);
+  .clay-input::placeholder {
+    color: var(--text-muted);
   }
 
-  /* Glass Button */
-  .glass-button {
-    background: linear-gradient(135deg, var(--color-primary), var(--color-primary-hover));
-    color: var(--color-text);
+  /* Clay Button */
+  .clay-button {
+    background-color: var(--surface-color);
+    color: var(--text-color);
     font-weight: 600;
-    padding: 0.75rem 1.5rem;
-    border-radius: 0.75rem;
+    padding: 0.85rem 1.5rem;
+    border-radius: 1rem;
     border: none;
-    box-shadow: 0 4px 15px rgba(99, 102, 241, 0.3);
-    transition: all 0.3s ease;
+    box-shadow: var(--clay-btn-shadow);
+    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
     cursor: pointer;
     display: inline-flex;
     align-items: center;
@@ -105,81 +150,70 @@
     user-select: none;
     text-decoration: none;
     position: relative;
-    overflow: hidden;
   }
 
-  .glass-button::after {
-    content: "";
-    position: absolute;
-    top: 0;
-    left: 0;
-    right: 0;
-    bottom: 0;
-    background: linear-gradient(rgba(255,255,255,0.1), transparent);
-    pointer-events: none;
-  }
-
-  .glass-button:hover {
-    box-shadow: 0 6px 20px rgba(99, 102, 241, 0.4);
+  .clay-button:hover {
+    box-shadow: var(--clay-shadow-sm);
     transform: translateY(-1px);
-    filter: brightness(1.1);
   }
 
-  .glass-button:active {
+  .clay-button:active {
+    box-shadow: var(--clay-inset-sm);
     transform: translateY(1px);
-    box-shadow: 0 2px 10px rgba(99, 102, 241, 0.3);
   }
 
-  .glass-button:disabled {
+  .clay-button:disabled {
     opacity: 0.6;
     cursor: not-allowed;
-    transform: none;
+    box-shadow: var(--clay-btn-shadow) !important;
+    transform: none !important;
   }
 
-  /* Secondary Button (Glass outline) */
-  .glass-button-secondary {
-    background: rgba(255, 255, 255, 0.05);
-    backdrop-filter: blur(8px);
-    border: 1px solid rgba(255, 255, 255, 0.1);
-    color: var(--color-text);
+  /* Primary Clay Button */
+  .clay-button-primary {
+    background-color: var(--primary-color);
+    color: white;
     font-weight: 600;
-    padding: 0.5rem 1rem;
-    border-radius: 0.5rem;
-    transition: all 0.2s ease;
+    padding: 0.85rem 1.5rem;
+    border-radius: 1rem;
+    border: none;
+    box-shadow: 6px 6px 12px rgba(0,0,0,0.2), -6px -6px 12px rgba(255,255,255,0.1);
+    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
     cursor: pointer;
     display: inline-flex;
     align-items: center;
     justify-content: center;
   }
 
-  .glass-button-secondary:hover {
-    background: rgba(255, 255, 255, 0.1);
-    border-color: rgba(255, 255, 255, 0.2);
+  .clay-button-primary:hover {
+    background-color: var(--primary-hover);
+    box-shadow: 8px 8px 16px rgba(0,0,0,0.25), -8px -8px 16px rgba(255,255,255,0.15);
+    transform: translateY(-1px);
+  }
+
+  .clay-button-primary:active {
+    box-shadow: inset 4px 4px 8px rgba(0,0,0,0.25), inset -4px -4px 8px rgba(255,255,255,0.1);
+    transform: translateY(1px);
   }
 
   /* Message Bubbles */
   .msg-bubble-me {
-    background: linear-gradient(135deg, var(--color-primary), var(--color-primary-hover));
-    box-shadow: 0 4px 15px rgba(99, 102, 241, 0.2);
+    background-color: var(--primary-color);
+    box-shadow: 4px 4px 10px rgba(0,0,0,0.15), -2px -2px 8px rgba(255,255,255,0.1);
     color: white;
+    border: none;
   }
   
   .msg-bubble-other {
-    background: rgba(255, 255, 255, 0.08);
-    backdrop-filter: blur(16px);
-    -webkit-backdrop-filter: blur(16px);
-    border: 1px solid rgba(255, 255, 255, 0.05);
-    color: white;
+    background-color: var(--surface-color);
+    box-shadow: var(--clay-shadow-sm);
+    color: var(--text-color);
+    border: none;
   }
 
-  /* Custom Animations */
   @keyframes float {
-    0%, 100% {
-      transform: translateY(0px);
-    }
-    50% {
-      transform: translateY(-8px);
-    }
+    0%, 100% { transform: translateY(0px); }
+    50% { transform: translateY(-8px); }
   }
   
   .animate-float {

@@ -48,28 +48,28 @@ export default function Login() {
   };
 
   return (
-    <div className="min-h-dvh flex items-center justify-center p-4 relative overflow-hidden">
+    <div className="min-h-dvh flex items-center justify-center p-4 relative overflow-hidden bg-background">
       <motion.div 
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.5, ease: "easeOut" }}
-        className="relative z-10 glass-panel p-8 sm:p-10 w-full max-w-md rounded-3xl"
+        className="relative z-10 clay-panel p-8 sm:p-10 w-full max-w-md"
       >
         <div className="text-center mb-8">
           <div className="flex justify-center mb-6">
-            <img src="/logo.png" alt="Nomihub Logo" className="w-16 h-16 rounded-2xl shadow-lg border border-white/10" />
+            <img src="/logo.png" alt="Nomihub Logo" className="w-16 h-16 rounded-2xl shadow-sm border border-black/5 dark:border-white/5" />
           </div>
-          <h2 className="text-3xl sm:text-4xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-indigo-400 to-purple-400 mb-2">
+          <h2 className="text-3xl sm:text-4xl font-bold text-primary mb-2">
             Welcome Back
           </h2>
-          <p className="text-sm text-gray-400">Sign in to continue your conversations</p>
+          <p className="text-sm text-text-muted">Sign in to continue your conversations</p>
         </div>
 
         {error && (
           <motion.div 
             initial={{ opacity: 0, scale: 0.95 }}
             animate={{ opacity: 1, scale: 1 }}
-            className="bg-red-500/20 border border-red-500/50 text-red-200 p-3 mb-6 rounded-xl text-sm text-center backdrop-blur-md"
+            className="bg-red-500/10 border border-red-500/20 text-red-500 p-3 mb-6 rounded-xl text-sm text-center"
           >
             {error}
           </motion.div>
@@ -77,12 +77,12 @@ export default function Login() {
 
         <form onSubmit={handleLogin} className="space-y-6">
           <div className="flex flex-col gap-2">
-            <label className="text-sm font-medium text-gray-300 ml-1">
+            <label className="text-sm font-medium text-text-muted ml-1">
               Username or Email
             </label>
             <input
               type="text"
-              className="glass-input"
+              className="clay-input"
               value={identifier}
               onChange={(e) => setIdentifier(e.target.value)}
               placeholder="Enter username or email"
@@ -92,12 +92,12 @@ export default function Login() {
           </div>
 
           <div className="flex flex-col gap-2">
-            <label className="text-sm font-medium text-gray-300 ml-1">
+            <label className="text-sm font-medium text-text-muted ml-1">
               Password
             </label>
             <input
               type="password"
-              className="glass-input"
+              className="clay-input"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               placeholder="Enter your password"
@@ -109,7 +109,7 @@ export default function Login() {
           <button
             type="submit"
             disabled={loading}
-            className="glass-button w-full py-3.5 text-base mt-4 disabled:opacity-60 disabled:cursor-not-allowed"
+            className="clay-button-primary w-full py-3.5 text-base mt-4"
           >
             {loading ? (
               <span className="flex items-center gap-2">
@@ -120,11 +120,11 @@ export default function Login() {
           </button>
         </form>
 
-        <div className="mt-8 text-center text-sm text-gray-400">
+        <div className="mt-8 text-center text-sm text-text-muted">
           Don't have an account?{' '}
           <Link
             href="/register"
-            className="text-indigo-400 font-medium hover:text-indigo-300 transition-colors"
+            className="text-primary font-bold hover:brightness-110 transition-all"
           >
             Create one
           </Link>

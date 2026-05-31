@@ -47,30 +47,27 @@ export default function ConfirmModal({
         animate={{ opacity: 1, scale: 1, y: 0 }}
         exit={{ opacity: 0, scale: 0.95, y: 20 }}
         transition={{ type: "spring", stiffness: 300, damping: 25 }}
-        className="flex flex-col bg-[#0B0F19]/90 backdrop-blur-2xl w-full max-w-[400px] rounded-3xl border border-white/10 shadow-[0_20px_60px_-15px_rgba(0,0,0,0.7)] overflow-hidden"
+        className="flex flex-col clay-panel w-full max-w-[400px] overflow-hidden"
       >
         <div className="p-6 flex flex-col items-center text-center">
-          <div className={`w-16 h-16 rounded-full mb-5 flex items-center justify-center shadow-lg ${isDanger ? 'bg-red-500/20 text-red-400 border border-red-500/30 shadow-red-500/10' : 'bg-indigo-500/20 text-indigo-400 border border-indigo-500/30 shadow-indigo-500/10'}`}>
+          <div className={`w-16 h-16 rounded-full mb-5 flex items-center justify-center shadow-[var(--clay-shadow-sm)] ${isDanger ? 'bg-red-500/20 text-red-500' : 'bg-primary/20 text-primary'}`}>
             {getIcon()}
           </div>
-          <h2 className="text-xl sm:text-2xl font-bold text-white mb-2">{title}</h2>
-          <p className="text-sm text-gray-400 mb-8 leading-relaxed px-2">
+          <h2 className="text-xl sm:text-2xl font-bold text-text mb-2">{title}</h2>
+          <p className="text-sm text-text-muted mb-8 leading-relaxed px-2 font-medium">
             {message}
           </p>
           <div className="flex w-full gap-3">
             <button
               onClick={onCancel}
-              className="flex-1 px-4 py-3 rounded-xl border border-white/10 bg-white/5 hover:bg-white/10 text-white font-semibold transition-all hover:border-white/20"
+              className="flex-1 px-4 py-3 clay-button !text-base"
             >
               {cancelText}
             </button>
             <button
               onClick={onConfirm}
-              className={`flex-1 px-4 py-3 rounded-xl font-semibold transition-all shadow-lg ${
-                isDanger 
-                  ? 'bg-red-500 hover:bg-red-600 text-white shadow-[0_0_15px_rgba(239,68,68,0.4)]' 
-                  : 'bg-indigo-500 hover:bg-indigo-600 text-white shadow-[0_0_15px_rgba(99,102,241,0.4)]'
-              }`}
+              style={isDanger ? { '--primary-color': '#ef4444', '--primary-color-dark': '#dc2626' } as any : undefined}
+              className="flex-1 px-4 py-3 clay-button-primary !text-base"
             >
               {confirmText}
             </button>
