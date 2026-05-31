@@ -10,7 +10,7 @@ const inter = Inter({
 });
 
 export const metadata: Metadata = {
-  title: "Modern Chat App",
+  title: "Nomihub",
   description: "A high-contrast, modern chatting application",
 };
 

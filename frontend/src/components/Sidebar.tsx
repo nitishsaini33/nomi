@@ -130,8 +130,16 @@ export default function Sidebar({ user }: { user: any }) {
 
   return (
     <div className="h-full flex flex-col bg-transparent text-white w-full">
-      {/* ── Header ── */}
-      <div className="flex-shrink-0 flex justify-between items-center px-4 sm:px-6 py-4 border-b border-white/5 bg-white/5 backdrop-blur-sm">
+      {/* ── Brand Header ── */}
+      <div className="flex-shrink-0 flex items-center gap-3 px-4 sm:px-6 py-4 border-b border-white/5 bg-white/5 backdrop-blur-sm">
+        <img src="/logo.png" alt="Nomihub Logo" className="w-8 h-8 object-cover rounded-xl shadow-sm border border-white/10" />
+        <h1 className="font-bold text-xl tracking-tight bg-clip-text text-transparent bg-gradient-to-r from-indigo-400 to-purple-400">
+          Nomihub
+        </h1>
+      </div>
+
+      {/* ── User Actions Header ── */}
+      <div className="flex-shrink-0 flex justify-between items-center px-4 sm:px-6 py-3 border-b border-white/5">
         <button
           onClick={() => router.push('/dashboard')}
           className="font-bold text-lg md:text-xl truncate max-w-[55%] hover:text-indigo-400 transition-colors cursor-pointer"

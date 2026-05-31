@@ -48,6 +48,9 @@ export default function Login() {
         className="relative z-10 glass-panel p-8 sm:p-10 w-full max-w-md rounded-3xl"
       >
         <div className="text-center mb-8">
+          <div className="flex justify-center mb-6">
+            <img src="/logo.png" alt="Nomihub Logo" className="w-16 h-16 rounded-2xl shadow-lg border border-white/10" />
+          </div>
           <h2 className="text-3xl sm:text-4xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-indigo-400 to-purple-400 mb-2">
             Welcome Back
           </h2>

@@ -2,7 +2,7 @@ import os
 from pydantic_settings import BaseSettings
 
 class Settings(BaseSettings):
-    PROJECT_NAME: str = "Modern Chat App"
+    PROJECT_NAME: str = "Nomihub"
     DATABASE_URL: str
     SECRET_KEY: str
     REDIS_URL: str

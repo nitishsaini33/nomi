@@ -24,7 +24,7 @@ async def lifespan(app: FastAPI):
     await close_redis()
 
 
-app = FastAPI(title="Modern Chat App API", lifespan=lifespan)
+app = FastAPI(title="Nomihub API", lifespan=lifespan)
 app.state.limiter = limiter
 app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
 
@@ -54,4 +54,4 @@ app.include_router(blocks.router)
 
 @app.get("/")
 async def root():
-    return {"message": "Welcome to Modern Chat App API"}
+    return {"message": "Welcome to Nomihub API"}

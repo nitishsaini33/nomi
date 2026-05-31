@@ -105,6 +105,9 @@ export default function Register() {
         )}
 
         <div className="text-center mb-8">
+          <div className="flex justify-center mb-6">
+            <img src="/logo.png" alt="Nomihub Logo" className="w-16 h-16 rounded-2xl shadow-lg border border-white/10" />
+          </div>
           <h2 className="text-3xl sm:text-4xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-indigo-400 to-purple-400 mb-2">
             {step === 1 ? 'Create Account' : 'Verify Email'}
           </h2>
