@@ -1,20 +1,39 @@
-import { MessageSquare } from "lucide-react";
+// empty state for dashboard
 
 export default function DashboardHome() {
   return (
-    <div className="hidden md:flex flex-1 flex-col items-center justify-center p-8 text-center bg-[url('data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIyMCIgaGVpZ2h0PSIyMCI+PGNpcmNsZSBjeD0iMiIgY3k9IjIiIHI9IjIiIGZpbGw9IiNjY2MiIG9wYWNpdHk9IjAuNSIvPjwvc3ZnPg==')] bg-repeat">
-      <div className="brutal-box bg-white p-6 sm:p-8 max-w-xs sm:max-w-md transform rotate-1">
-        <div className="flex justify-center mb-4 sm:mb-6">
-          <div className="p-3 sm:p-4 bg-primary border-4 border-text shadow-brutal inline-block">
-            <MessageSquare size={40} className="text-text" />
-          </div>
+    <div className="hidden md:flex flex-1 flex-col items-center justify-center p-8 text-center relative overflow-hidden">
+      {/* Background glowing orb for premium feel */}
+      <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-96 h-96 bg-indigo-500/10 rounded-full blur-[100px] pointer-events-none" />
+
+      {/* Main Content */}
+      <div className="relative z-10 flex flex-col items-center">
+        <div className="mb-8 relative">
+          {/* Subtle animated ring around logo */}
+          <div className="absolute inset-0 border-2 border-indigo-400/20 rounded-3xl animate-[spin_10s_linear_infinite] scale-110" />
+          <div className="absolute inset-0 border-2 border-purple-400/20 rounded-3xl animate-[spin_15s_linear_infinite_reverse] scale-125" />
+          
+          <img 
+            src="/logo.png" 
+            alt="Nomihub Logo" 
+            className="w-24 h-24 object-cover rounded-3xl shadow-[0_0_40px_rgba(99,102,241,0.3)] border border-white/10" 
+          />
         </div>
-        <h2 className="text-2xl sm:text-3xl font-black uppercase mb-3 sm:mb-4">
-          Select a chat
+        
+        <h2 className="text-3xl sm:text-4xl font-bold tracking-tight bg-clip-text text-transparent bg-gradient-to-r from-indigo-400 to-purple-400 mb-4 drop-shadow-sm">
+          Welcome to Nomihub
         </h2>
-        <p className="font-bold text-gray-600 text-sm sm:text-base">
-          Choose a friend from the sidebar to start talking loud.
+        
+        <p className="text-gray-400 font-medium max-w-sm leading-relaxed">
+          Select a conversation from the sidebar to start connecting, or use the search bar to find new friends.
         </p>
+
+        {/* Decorative subtle element below */}
+        <div className="mt-12 flex gap-2 justify-center opacity-50">
+          <div className="w-2 h-2 rounded-full bg-indigo-400 animate-pulse" />
+          <div className="w-2 h-2 rounded-full bg-purple-400 animate-pulse delay-100" />
+          <div className="w-2 h-2 rounded-full bg-indigo-400 animate-pulse delay-200" />
+        </div>
       </div>
     </div>
   );
