@@ -169,10 +169,13 @@ export const useChatStore = create<ChatStore>()(
           const newLastMessageTimes = { ...state.lastMessageTimes };
           delete newLastMessageTimes[userId];
           
+          const newFriends = state.friends.filter(f => f.id !== userId);
+          
           return {
             messages: newMessages,
             unreadCounts: newUnread,
             lastMessageTimes: newLastMessageTimes,
+            friends: newFriends,
           };
         }),
 
